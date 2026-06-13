@@ -145,9 +145,7 @@ watch(
 );
 
 const messengerLink = computed(() => {
-    const text = `Hi Watch Gallery Manila, I would like to inquire about the ${props.watch.condition} ${
-        props.watch.brand || ""
-    } ${displayWatchName.value || ""} (Ref. ${props.watch.reference_number || ""}) with the price of ${formatMoney(actualWatchPrice.value)}. Thank you so much!`;
+    const text = `Hi Watch Gallery Manila, I would like to inquire about the ${props.watch.condition}  ${displayWatchName.value || ""} (Ref. ${props.watch.reference_number || ""}) with the price of ${formatMoney(actualWatchPrice.value)}. Thank you so much!`;
 
     return `https://m.me/watchgallerymanila?text=${encodeURIComponent(text)}`;
 });

@@ -1031,9 +1031,11 @@ const messengerLink = (watch = null) => {
                                         <div class="watch-card-overlay" />
 
                                         <div
-                                            class="absolute left-2.5 right-2.5 top-2.5 z-20 flex items-start justify-between gap-2 sm:left-4 sm:right-4 sm:top-4 sm:gap-3"
+                                            class="absolute left-2 right-2 top-2 z-20 flex items-start justify-between gap-1.5 sm:left-4 sm:right-4 sm:top-4 sm:gap-3"
                                         >
-                                            <div class="flex flex-wrap gap-2">
+                                            <div
+                                                class="flex flex-wrap gap-1.5 sm:gap-2"
+                                            >
                                                 <span
                                                     class="watch-badge-available"
                                                 >
@@ -1054,20 +1056,20 @@ const messengerLink = (watch = null) => {
                                         </div>
 
                                         <div
-                                            class="absolute inset-x-0 bottom-0 z-20 p-3 sm:p-5"
+                                            class="absolute inset-x-0 bottom-0 z-20 p-2.5 sm:p-5"
                                         >
                                             <div class="max-w-full">
                                                 <h3
-                                                    class="line-clamp-2 max-w-[96%] text-sm font-black leading-[1.08] tracking-[-0.025em] text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.45)] sm:text-xl"
+                                                    class="line-clamp-2 max-w-[96%] text-[11px] font-black leading-[1.08] tracking-[-0.02em] text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.45)] sm:text-xl"
                                                 >
                                                     {{ watch.model_name }}
                                                 </h3>
 
                                                 <div
-                                                    class="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5"
+                                                    class="mt-1.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 sm:mt-2 sm:gap-x-2"
                                                 >
                                                     <p
-                                                        class="line-clamp-1 text-[13px] font-black leading-none tracking-[-0.025em] text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.45)] sm:text-lg"
+                                                        class="line-clamp-1 text-[11px] font-black leading-none tracking-[-0.02em] text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.45)] sm:text-lg"
                                                     >
                                                         {{
                                                             formatMoney(
@@ -1084,7 +1086,7 @@ const messengerLink = (watch = null) => {
                                                                 watch,
                                                             )
                                                         "
-                                                        class="line-clamp-1 text-[10px] font-bold leading-none text-white/60 line-through decoration-white/60 decoration-1 drop-shadow-[0_3px_12px_rgba(0,0,0,0.45)] sm:text-xs"
+                                                        class="line-clamp-1 text-[8px] font-bold leading-none text-white/60 line-through decoration-white/60 decoration-1 drop-shadow-[0_3px_12px_rgba(0,0,0,0.45)] sm:text-xs"
                                                     >
                                                         SRP
                                                         {{
@@ -1096,9 +1098,7 @@ const messengerLink = (watch = null) => {
                                                 </div>
 
                                                 <span class="watch-card-cta">
-                                                    <span
-                                                        >View More Details</span
-                                                    >
+                                                    <span>View Details</span>
                                                     <span
                                                         class="watch-card-cta-arrow"
                                                         >→</span
@@ -2089,28 +2089,32 @@ button:hover .shop-now-icon {
     .watch-badge-available,
     .watch-badge-gender,
     .watch-badge-drop {
-        padding: 0.28rem 0.42rem;
-        font-size: 0.42rem;
-        letter-spacing: 0.08em;
+        padding: 0.22rem 0.36rem;
+        font-size: 0.38rem;
+        letter-spacing: 0.07em;
+        line-height: 1;
         box-shadow:
-            0 5px 16px rgba(0, 0, 0, 0.12),
+            0 5px 14px rgba(0, 0, 0, 0.12),
             inset 0 1px 0 rgba(255, 255, 255, 0.14);
     }
 
     .watch-card-cta {
-        margin-top: 0.55rem;
-        height: 1.95rem;
-        border-radius: 0.7rem;
-        font-size: 0.52rem;
-        gap: 0.25rem;
-        letter-spacing: -0.01em;
+        margin-top: 0.45rem;
+        height: 1.55rem;
+        width: fit-content;
+        max-width: 100%;
+        padding-inline: 0.58rem;
+        border-radius: 0.55rem;
+        font-size: 0.46rem;
+        gap: 0.22rem;
+        letter-spacing: 0.01em;
         box-shadow:
-            0 10px 24px rgba(0, 0, 0, 0.18),
+            0 8px 18px rgba(0, 0, 0, 0.16),
             inset 0 1px 0 rgba(255, 255, 255, 0.16);
     }
 
     .watch-card-cta-arrow {
-        font-size: 0.65rem;
+        font-size: 0.58rem;
     }
 }
 .shop-page-enter-active,
@@ -2386,8 +2390,10 @@ button:hover .shop-now-icon {
     }
 
     .watch-card-cta {
-        height: 2.75rem;
-        font-size: 0.74rem;
+        height: 1.28rem;
+        width: fit-content;
+        padding-inline: 0.46rem;
+        font-size: 0.4rem;
     }
 }
 
@@ -2747,6 +2753,44 @@ button:hover .shop-now-icon {
     .filter-loading-card {
         width: min(100%, 21rem);
         padding: 0.9rem 1rem;
+    }
+}
+
+/* Final mobile watch-card compact overrides */
+@media (max-width: 639px) {
+    .shop-grid-card .watch-badge-available,
+    .shop-grid-card .watch-badge-gender,
+    .shop-grid-card .watch-badge-drop {
+        padding: 0.16rem 0.3rem;
+        font-size: 0.34rem;
+        line-height: 1;
+        letter-spacing: 0.055em;
+        border-width: 1px;
+        box-shadow:
+            0 4px 10px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+
+    .shop-grid-card .watch-card-cta {
+        margin-top: 0.38rem;
+        height: 1.28rem;
+        min-height: 1.28rem;
+        width: fit-content;
+        max-width: 100%;
+        padding-inline: 0.46rem;
+        border-radius: 0.45rem;
+        font-size: 0.4rem;
+        line-height: 1;
+        gap: 0.18rem;
+        letter-spacing: 0.015em;
+        box-shadow:
+            0 6px 14px rgba(0, 0, 0, 0.14),
+            inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    }
+
+    .shop-grid-card .watch-card-cta-arrow {
+        font-size: 0.5rem;
+        line-height: 1;
     }
 }
 
