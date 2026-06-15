@@ -501,22 +501,12 @@ const messengerLink = (watch = null) => {
 
                 <div class="flex items-center gap-2 sm:hidden">
                     <button
-                        v-if="hasAboutUs"
                         type="button"
-                        @click="scrollToAbout"
-                        class="rounded-full border border-white/15 bg-white/10 px-3 py-2.5 text-xs font-black text-white shadow-lg shadow-black/10 backdrop-blur-xl active:scale-95"
+                        @click="showHeroAgain"
+                        class="rounded-full border border-white/15 bg-white/10 px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-black/10 backdrop-blur-xl transition hover:bg-white/15 active:scale-95"
                     >
-                        About
+                        Home
                     </button>
-
-                    <a
-                        :href="messengerLink()"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="rounded-full border border-white/20 bg-white px-4 py-2.5 text-xs font-black text-[#071923] shadow-lg shadow-black/15 active:scale-95"
-                    >
-                        Inquire
-                    </a>
                 </div>
             </div>
 
@@ -1634,34 +1624,133 @@ const messengerLink = (watch = null) => {
 
         <!-- Mobile Sticky CTA -->
         <div
-            class="fixed left-3 right-3 z-40 grid gap-2 rounded-[1.5rem] border border-white/70 bg-white/85 p-1.5 shadow-2xl shadow-slate-900/15 backdrop-blur-2xl sm:hidden bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]"
-            :class="hasAboutUs ? 'grid-cols-3' : 'grid-cols-2'"
+            class="fixed inset-x-0 z-40 px-3 sm:hidden bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]"
         >
-            <button
-                type="button"
-                @click.prevent.stop="scrollToShop"
-                class="rounded-[1.15rem] border border-slate-200 bg-white px-2 py-3 text-[11px] font-black leading-tight text-[#071923] shadow-sm active:scale-95"
+            <div
+                class="mx-auto max-w-[420px] rounded-[1.75rem] border border-white/70 bg-white/90 p-1.5 shadow-[0_18px_50px_rgba(15,23,42,0.18)] backdrop-blur-2xl"
             >
-                Latest
-            </button>
+                <div
+                    class="grid items-center gap-1.5"
+                    :class="hasAboutUs ? 'grid-cols-3' : 'grid-cols-2'"
+                >
+                    <button
+                        type="button"
+                        @click.prevent.stop="scrollToShop"
+                        class="flex h-[54px] flex-col items-center justify-center gap-1 rounded-[1.25rem] text-[#071923] transition hover:bg-slate-50 active:scale-95"
+                    >
+                        <span
+                            class="grid h-7 w-7 place-items-center rounded-full bg-[#eef8fb] text-[#0b3a56]"
+                        >
+                            <svg
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                                class="h-[15px] w-[15px]"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <rect
+                                    x="3"
+                                    y="3"
+                                    width="7"
+                                    height="7"
+                                    rx="1.5"
+                                />
+                                <rect
+                                    x="14"
+                                    y="3"
+                                    width="7"
+                                    height="7"
+                                    rx="1.5"
+                                />
+                                <rect
+                                    x="3"
+                                    y="14"
+                                    width="7"
+                                    height="7"
+                                    rx="1.5"
+                                />
+                                <rect
+                                    x="14"
+                                    y="14"
+                                    width="7"
+                                    height="7"
+                                    rx="1.5"
+                                />
+                            </svg>
+                        </span>
 
-            <button
-                v-if="hasAboutUs"
-                type="button"
-                @click="scrollToAbout"
-                class="rounded-[1.15rem] border border-slate-200 bg-white px-2 py-3 text-[11px] font-black leading-tight text-[#071923] shadow-sm active:scale-95"
-            >
-                About
-            </button>
+                        <span class="text-[10px] font-black leading-none">
+                            Latest
+                        </span>
+                    </button>
 
-            <a
-                :href="messengerLink()"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="rounded-[1.15rem] border border-slate-200 bg-white px-2 py-3 text-center text-[11px] font-black leading-tight text-[#071923] shadow-sm active:scale-95"
-            >
-                Inquire
-            </a>
+                    <button
+                        v-if="hasAboutUs"
+                        type="button"
+                        @click="scrollToAbout"
+                        class="flex h-[54px] flex-col items-center justify-center gap-1 rounded-[1.25rem] text-[#071923] transition hover:bg-slate-50 active:scale-95"
+                    >
+                        <span
+                            class="grid h-7 w-7 place-items-center rounded-full bg-[#eef8fb] text-[#0b3a56]"
+                        >
+                            <svg
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                                class="h-[16px] w-[16px]"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <circle cx="12" cy="12" r="9" />
+                                <path d="M12 10.75v5" />
+                                <path d="M12 7.5h.01" />
+                            </svg>
+                        </span>
+
+                        <span class="text-[10px] font-black leading-none">
+                            About
+                        </span>
+                    </button>
+
+                    <a
+                        :href="messengerLink()"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Inquire on Messenger"
+                        class="relative flex h-[54px] flex-col items-center justify-center gap-1 overflow-hidden rounded-[1.25rem] bg-gradient-to-br from-[#0084ff] via-[#0b78ff] to-[#0b3a56] text-white shadow-lg shadow-[#0084ff]/25 transition active:scale-95"
+                    >
+                        <span
+                            class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_0%,rgba(255,255,255,0.38),transparent_34%)]"
+                        />
+
+                        <span
+                            class="relative z-10 grid h-7 w-7 place-items-center rounded-full bg-white/18"
+                        >
+                            <svg
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                                class="h-[17px] w-[17px]"
+                                fill="currentColor"
+                            >
+                                <path
+                                    d="M12 2.25c-5.37 0-9.75 4.03-9.75 9 0 2.82 1.41 5.32 3.62 6.97v3.16c0 .33.37.52.64.33l2.9-2.03c.82.23 1.69.36 2.59.36 5.37 0 9.75-4.03 9.75-9s-4.38-8.79-9.75-8.79Zm.98 12.14-2.48-2.65-4.84 2.65 5.31-5.64 2.54 2.65 4.77-2.65-5.3 5.64Z"
+                                />
+                            </svg>
+                        </span>
+
+                        <span
+                            class="relative z-10 text-[10px] font-black leading-none"
+                        >
+                            Message
+                        </span>
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 </template>
