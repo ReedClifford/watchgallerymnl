@@ -1,11 +1,8 @@
 <script setup>
-import { ref } from 'vue';
-import ApplicationLogo from '@/Components/ApplicationLogo.vue';
-import Dropdown from '@/Components/Dropdown.vue';
-import DropdownLink from '@/Components/DropdownLink.vue';
-import NavLink from '@/Components/NavLink.vue';
-import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
-import { Link } from '@inertiajs/vue3';
+import { ref } from "vue";
+import Dropdown from "@/Components/Dropdown.vue";
+import DropdownLink from "@/Components/DropdownLink.vue";
+import { Link } from "@inertiajs/vue3";
 
 const showingNavigationDropdown = ref(false);
 </script>
@@ -14,35 +11,46 @@ const showingNavigationDropdown = ref(false);
     <div>
         <div class="min-h-screen bg-gray-100">
             <nav
-                class="border-b border-gray-100 bg-white"
+                class="sticky top-0 z-50 border-b border-white/10 bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] shadow-xl shadow-slate-900/15"
             >
                 <!-- Primary Navigation Menu -->
                 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div class="flex h-16 justify-between">
-                        <div class="flex">
+                    <div
+                        class="flex h-[78px] items-center justify-between gap-3 sm:h-[90px]"
+                    >
+                        <div class="flex min-w-0 items-center gap-6">
                             <!-- Logo -->
                             <div class="flex shrink-0 items-center">
-                                <Link :href="route('dashboard')">
-                                    <ApplicationLogo
-                                        class="block h-9 w-auto fill-current text-gray-800"
+                                <Link
+                                    :href="route('dashboard')"
+                                    class="group flex h-[70px] w-[150px] items-center overflow-visible sm:h-[82px] sm:w-[220px]"
+                                    aria-label="Watch Gallery Manila Dashboard"
+                                >
+                                    <img
+                                        src="/images/WGM.png"
+                                        alt="Watch Gallery Manila"
+                                        class="h-16 w-auto origin-left scale-[1.85] object-contain transition duration-300 group-hover:opacity-85 sm:h-20 sm:scale-[2.05] md:h-24"
                                     />
                                 </Link>
                             </div>
 
                             <!-- Navigation Links -->
-                            <div
-                                class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex"
-                            >
-                                <NavLink
+                            <div class="hidden items-center sm:flex">
+                                <Link
                                     :href="route('dashboard')"
-                                    :active="route().current('dashboard')"
+                                    class="rounded-full px-5 py-2.5 text-sm font-black text-white/75 transition hover:bg-white/10 hover:text-white"
+                                    :class="
+                                        route().current('dashboard')
+                                            ? 'bg-white/15 text-white'
+                                            : ''
+                                    "
                                 >
                                     Dashboard
-                                </NavLink>
+                                </Link>
                             </div>
                         </div>
 
-                        <div class="hidden sm:ms-6 sm:flex sm:items-center">
+                        <div class="hidden sm:flex sm:items-center">
                             <!-- Settings Dropdown -->
                             <div class="relative ms-3">
                                 <Dropdown align="right" width="48">
@@ -50,7 +58,7 @@ const showingNavigationDropdown = ref(false);
                                         <span class="inline-flex rounded-md">
                                             <button
                                                 type="button"
-                                                class="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
+                                                class="inline-flex items-center rounded-full border border-white/10 bg-white/10 px-4 py-2.5 text-sm font-bold leading-4 text-white/80 shadow-inner shadow-white/5 transition duration-150 ease-in-out hover:bg-white/15 hover:text-white focus:outline-none"
                                             >
                                                 {{ $page.props.auth.user.name }}
 
@@ -76,6 +84,7 @@ const showingNavigationDropdown = ref(false);
                                         >
                                             Profile
                                         </DropdownLink>
+
                                         <DropdownLink
                                             :href="route('logout')"
                                             method="post"
@@ -95,7 +104,8 @@ const showingNavigationDropdown = ref(false);
                                     showingNavigationDropdown =
                                         !showingNavigationDropdown
                                 "
-                                class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none"
+                                class="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/10 p-2.5 text-white/80 transition duration-150 ease-in-out hover:bg-white/15 hover:text-white focus:outline-none"
+                                aria-label="Toggle navigation menu"
                             >
                                 <svg
                                     class="h-6 w-6"
@@ -114,6 +124,7 @@ const showingNavigationDropdown = ref(false);
                                         stroke-width="2"
                                         d="M4 6h16M4 12h16M4 18h16"
                                     />
+
                                     <path
                                         :class="{
                                             hidden: !showingNavigationDropdown,
@@ -131,59 +142,69 @@ const showingNavigationDropdown = ref(false);
                     </div>
                 </div>
 
+                <div
+                    class="h-px bg-gradient-to-r from-transparent via-white/25 to-transparent"
+                />
+
                 <!-- Responsive Navigation Menu -->
                 <div
                     :class="{
                         block: showingNavigationDropdown,
                         hidden: !showingNavigationDropdown,
                     }"
-                    class="sm:hidden"
+                    class="border-t border-white/10 bg-[#071923] sm:hidden"
                 >
-                    <div class="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink
+                    <div class="space-y-1 px-4 pb-3 pt-3">
+                        <Link
                             :href="route('dashboard')"
-                            :active="route().current('dashboard')"
+                            class="block rounded-2xl px-4 py-3 text-sm font-black text-white/75 transition hover:bg-white/10 hover:text-white"
+                            :class="
+                                route().current('dashboard')
+                                    ? 'bg-white/15 text-white'
+                                    : ''
+                            "
                         >
                             Dashboard
-                        </ResponsiveNavLink>
+                        </Link>
                     </div>
 
                     <!-- Responsive Settings Options -->
-                    <div
-                        class="border-t border-gray-200 pb-1 pt-4"
-                    >
+                    <div class="border-t border-white/10 pb-4 pt-4">
                         <div class="px-4">
-                            <div
-                                class="text-base font-medium text-gray-800"
-                            >
+                            <div class="text-base font-black text-white">
                                 {{ $page.props.auth.user.name }}
                             </div>
-                            <div class="text-sm font-medium text-gray-500">
+
+                            <div
+                                class="mt-0.5 text-sm font-medium text-white/55"
+                            >
                                 {{ $page.props.auth.user.email }}
                             </div>
                         </div>
 
-                        <div class="mt-3 space-y-1">
-                            <ResponsiveNavLink :href="route('profile.edit')">
+                        <div class="mt-3 space-y-1 px-4">
+                            <Link
+                                :href="route('profile.edit')"
+                                class="block rounded-2xl px-4 py-3 text-sm font-bold text-white/70 transition hover:bg-white/10 hover:text-white"
+                            >
                                 Profile
-                            </ResponsiveNavLink>
-                            <ResponsiveNavLink
+                            </Link>
+
+                            <Link
                                 :href="route('logout')"
                                 method="post"
                                 as="button"
+                                class="block w-full rounded-2xl px-4 py-3 text-left text-sm font-bold text-white/70 transition hover:bg-white/10 hover:text-white"
                             >
                                 Log Out
-                            </ResponsiveNavLink>
+                            </Link>
                         </div>
                     </div>
                 </div>
             </nav>
 
             <!-- Page Heading -->
-            <header
-                class="bg-white shadow"
-                v-if="$slots.header"
-            >
+            <header class="bg-white shadow" v-if="$slots.header">
                 <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                     <slot name="header" />
                 </div>

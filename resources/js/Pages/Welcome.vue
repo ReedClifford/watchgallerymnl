@@ -442,24 +442,19 @@ const messengerLink = (watch = null) => {
             class="sticky top-0 z-50 border-b border-white/10 bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] shadow-xl shadow-slate-900/15 backdrop-blur-2xl"
         >
             <div
-                class="mx-auto flex h-[64px] max-w-7xl items-center justify-between px-4 sm:h-[74px] sm:px-6 lg:px-8"
+                class="mx-auto flex h-[70px] max-w-7xl items-center justify-between gap-3 px-4 sm:h-[82px] sm:px-6 lg:px-8"
             >
                 <button
                     type="button"
                     @click="showHeroAgain"
-                    class="group text-left"
+                    class="group flex h-[70px] w-[150px] shrink-0 items-center overflow-visible sm:h-[82px] sm:w-[220px]"
+                    aria-label="Go back to home"
                 >
-                    <p
-                        class="text-[9px] font-black uppercase tracking-[0.45em] text-white/60"
-                    >
-                        Watch Gallery
-                    </p>
-
-                    <h1
-                        class="mt-0.5 text-base font-black tracking-wide text-white transition group-hover:text-white/80 sm:mt-1 sm:text-xl"
-                    >
-                        Manila
-                    </h1>
+                    <img
+                        src="/images/WGM.png"
+                        alt="Watch Gallery Manila"
+                        class="h-16 w-auto origin-left scale-[1.85] object-contain transition duration-300 group-hover:opacity-85 sm:h-20 sm:scale-[2.05] md:h-24"
+                    />
                 </button>
 
                 <nav

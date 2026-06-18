@@ -83,43 +83,34 @@ const closeSidebar = () => {
             </div>
 
             <!-- Brand -->
-            <div class="relative border-b border-white/10 px-5 py-6">
-                <div
-                    class="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/10 p-5 shadow-xl shadow-black/20 backdrop-blur-xl"
+            <div class="relative border-b border-white/10 px-5 py-5">
+                <Link
+                    :href="route('dashboard')"
+                    class="group relative block overflow-hidden rounded-[2rem] border border-white/10 bg-white/10 px-4 py-5 shadow-xl shadow-black/20 backdrop-blur-xl transition hover:bg-white/[0.13] active:scale-[0.99]"
+                    @click="closeSidebar"
+                    aria-label="Watch Gallery Manila Dashboard"
                 >
                     <div
                         class="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#d6b18a]/25 blur-2xl"
                     />
 
-                    <div class="relative flex items-center gap-3">
-                        <div
-                            class="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-[#f0d8b6] via-[#d6b18a] to-[#b98b63] text-sm font-black tracking-tight text-[#071923] shadow-lg shadow-black/20"
-                        >
-                            WGM
-                        </div>
-
-                        <div>
-                            <p
-                                class="text-[10px] font-bold uppercase tracking-[0.35em] text-[#f0d8b6]"
-                            >
-                                Watch Gallery
-                            </p>
-
-                            <h1
-                                class="mt-1 text-2xl font-black tracking-wide text-white"
-                            >
-                                Manila
-                            </h1>
-                        </div>
+                    <div
+                        class="relative flex min-h-[108px] items-center justify-center overflow-visible"
+                    >
+                        <img
+                            src="/images/WGM.png"
+                            alt="Watch Gallery Manila"
+                            class="h-24 w-auto max-w-[245px] origin-center scale-[1.65] object-contain drop-shadow-[0_18px_35px_rgba(0,0,0,0.28)] transition duration-300 group-hover:scale-[1.72] group-hover:opacity-90 sm:h-28"
+                        />
                     </div>
 
                     <p
-                        class="relative mt-4 text-xs leading-relaxed text-slate-300"
+                        class="relative mt-4 text-center text-xs leading-relaxed text-slate-300"
                     >
                         Admin inventory, transactions, and website content
                         management.
                     </p>
-                </div>
+                </Link>
             </div>
 
             <!-- Navigation -->
@@ -195,18 +186,33 @@ const closeSidebar = () => {
                 class="sticky top-0 z-30 border-b border-white/10 bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] shadow-xl shadow-slate-900/15 backdrop-blur-2xl"
             >
                 <div
-                    class="flex h-16 items-center justify-between px-4 sm:h-20 sm:px-6 lg:px-8"
+                    class="flex h-[72px] items-center justify-between gap-3 px-4 sm:h-20 sm:px-6 lg:px-8"
                 >
                     <div class="flex min-w-0 items-center gap-3">
                         <button
                             type="button"
-                            class="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-white/10 text-lg text-white shadow-lg shadow-black/20 transition hover:bg-white/15 active:scale-95 lg:hidden"
+                            class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/10 text-lg text-white shadow-lg shadow-black/20 transition hover:bg-white/15 active:scale-95 lg:hidden"
                             @click="sidebarOpen = true"
+                            aria-label="Open admin menu"
                         >
                             ☰
                         </button>
 
-                        <div class="min-w-0">
+                        <!-- Mobile / Topbar Logo -->
+                        <Link
+                            :href="route('dashboard')"
+                            class="group flex h-[56px] w-[145px] shrink-0 items-center overflow-visible sm:h-[64px] sm:w-[190px] lg:hidden"
+                            aria-label="Watch Gallery Manila Dashboard"
+                        >
+                            <img
+                                src="/images/WGM.png"
+                                alt="Watch Gallery Manila"
+                                class="h-14 w-auto origin-left scale-[1.75] object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.28)] transition duration-300 group-hover:opacity-90 sm:h-16 sm:scale-[1.95]"
+                            />
+                        </Link>
+
+                        <!-- Desktop Topbar Text -->
+                        <div class="hidden min-w-0 lg:block">
                             <p
                                 class="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f0d8b6] sm:text-xs"
                             >
