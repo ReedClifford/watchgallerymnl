@@ -3481,36 +3481,50 @@ button:hover .shop-now-icon {
         border-radius: 0.78rem;
     }
 
+    .shop-grid-card-body {
+        padding: 0.45rem 0.5rem 0.75rem;
+    }
+
     .shop-grid-card .watch-badge-available,
     .shop-grid-card .watch-badge-gender,
     .shop-grid-card .watch-badge-demand {
-        padding: 0.2rem 0.32rem;
-        font-size: 0.38rem;
+        padding: 0.18rem 0.3rem;
+        font-size: 0.34rem;
         line-height: 1;
-        letter-spacing: 0.02em;
+        letter-spacing: 0.015em;
         border-width: 1px;
         box-shadow:
             0 5px 12px rgba(15, 23, 42, 0.14),
             inset 0 1px 0 rgba(255, 255, 255, 0.22);
     }
 
-    .shop-card-title,
+    .shop-card-title {
+        font-size: 0.76rem;
+        line-height: 1.05;
+        letter-spacing: -0.035em;
+    }
+
     .shop-card-price {
         font-size: 0.92rem;
-        line-height: 1.08;
-        letter-spacing: -0.038em;
+        line-height: 1.05;
+        letter-spacing: -0.035em;
     }
 
     .shop-card-price-stack {
-        margin-top: 0.48rem;
-        gap: 0.16rem;
+        margin-top: 0.36rem;
+        gap: 0.12rem;
     }
 
     .shop-card-srp-wrap {
         gap: 0;
-        font-size: 0.72rem;
-        line-height: 1.04;
+        font-size: 0.66rem;
+        line-height: 1.03;
         letter-spacing: -0.008em;
+    }
+
+    .shop-grid-card-body > div {
+        min-height: 3.8rem;
+        gap: 0.45rem;
     }
 
     .watch-card-action {

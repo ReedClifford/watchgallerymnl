@@ -610,21 +610,30 @@ const specs = computed(() => {
                                         :href="messengerLink"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        class="group relative inline-flex min-h-12 w-full items-center justify-center overflow-hidden rounded-[1.1rem] border border-white/20 bg-white px-5 py-3 text-sm font-black text-[#071923] shadow-lg shadow-black/15 transition hover:bg-white/90 active:scale-[0.98]"
+                                        class="group relative inline-flex min-h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-[1.1rem] border border-[#0084ff]/30 bg-gradient-to-r from-[#0084ff] via-[#0b78ff] to-[#006aff] px-5 py-3 text-sm font-black text-white shadow-lg shadow-[#0084ff]/25 transition hover:brightness-110 hover:shadow-[#0084ff]/35 active:scale-[0.98]"
                                     >
                                         <span
-                                            class="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,transparent,rgba(11,58,86,0.10),transparent)] opacity-0 transition group-hover:opacity-100"
+                                            class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_0%,rgba(255,255,255,0.38),transparent_36%)] opacity-90"
                                         />
+
+                                        <span
+                                            class="relative z-10 grid h-7 w-7 place-items-center rounded-full bg-white/18 transition group-hover:bg-white/25"
+                                        >
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                aria-hidden="true"
+                                                class="h-[17px] w-[17px]"
+                                                fill="currentColor"
+                                            >
+                                                <path
+                                                    d="M12 2.25c-5.37 0-9.75 4.03-9.75 9 0 2.82 1.41 5.32 3.62 6.97v3.16c0 .33.37.52.64.33l2.9-2.03c.82.23 1.69.36 2.59.36 5.37 0 9.75-4.03 9.75-9s-4.38-8.79-9.75-8.79Zm.98 12.14-2.48-2.65-4.84 2.65 5.31-5.64 2.54 2.65 4.77-2.65-5.3 5.64Z"
+                                                />
+                                            </svg>
+                                        </span>
 
                                         <span class="relative z-10"
                                             >Inquire on Messenger</span
                                         >
-
-                                        <span
-                                            class="relative z-10 ml-2 transition group-hover:translate-x-0.5"
-                                        >
-                                            →
-                                        </span>
                                     </a>
                                 </div>
                             </div>
@@ -712,6 +721,18 @@ const specs = computed(() => {
                             </h2>
                         </div>
 
+                        <!-- Mobile Swipe Cue -->
+                        <div
+                            class="flex shrink-0 items-center gap-1.5 sm:hidden"
+                        >
+                            <span class="mobile-swipe-cue">
+                                <span class="mobile-swipe-dot" />
+                                Swipe
+                                <span class="mobile-swipe-cue-arrow">→</span>
+                            </span>
+                        </div>
+
+                        <!-- Desktop Arrows -->
                         <div
                             class="hidden shrink-0 items-center gap-1.5 sm:flex"
                         >
@@ -735,91 +756,122 @@ const specs = computed(() => {
                         </div>
                     </div>
 
-                    <div
-                        ref="otherWatchesStrip"
-                        class="bottom-watch-strip flex snap-x gap-2.5 overflow-x-auto px-1 pb-8 pt-2 sm:gap-3"
-                    >
-                        <Link
-                            v-for="item in compactOtherWatches"
-                            :key="item.id"
-                            :href="item.url || `/watches/${item.id}`"
-                            class="bottom-watch-card group"
+                    <div class="relative">
+                        <!-- Mobile Left Fade -->
+                        <div
+                            class="pointer-events-none absolute inset-y-2 left-0 z-20 w-5 bg-gradient-to-r from-white via-white/80 to-transparent sm:hidden"
+                        />
+
+                        <!-- Mobile Right Fade + Floating Arrow -->
+                        <div
+                            class="pointer-events-none absolute inset-y-2 right-0 z-20 flex w-12 items-center justify-end bg-gradient-to-l from-white via-white/90 to-transparent pr-1 sm:hidden"
                         >
-                            <div class="bottom-watch-media">
-                                <img
-                                    v-if="item.image_url"
-                                    :src="item.image_url"
-                                    :alt="item.display_name || item.model_name"
-                                    class="bottom-watch-image"
-                                />
+                            <span class="mobile-floating-swipe-arrow">→</span>
+                        </div>
 
-                                <div
-                                    v-else
-                                    class="grid h-full w-full place-items-center bg-slate-100 text-xs text-slate-400"
-                                >
-                                    No Image
-                                </div>
+                        <div
+                            ref="otherWatchesStrip"
+                            class="bottom-watch-strip flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-6 pr-8 pt-2 scroll-smooth sm:gap-3 sm:pb-8 sm:pr-1"
+                        >
+                            <Link
+                                v-for="item in compactOtherWatches"
+                                :key="item.id"
+                                :href="item.url || `/watches/${item.id}`"
+                                class="bottom-watch-card group snap-start"
+                            >
+                                <div class="bottom-watch-media">
+                                    <img
+                                        v-if="item.image_url"
+                                        :src="item.image_url"
+                                        :alt="
+                                            item.display_name || item.model_name
+                                        "
+                                        class="bottom-watch-image"
+                                    />
 
-                                <div class="bottom-watch-badges">
-                                    <span
-                                        v-if="item.condition"
-                                        class="bottom-watch-pill"
+                                    <div
+                                        v-else
+                                        class="grid h-full w-full place-items-center bg-slate-100 text-xs text-slate-400"
                                     >
-                                        {{ conditionLabel(item.condition) }}
-                                    </span>
+                                        No Image
+                                    </div>
 
-                                    <span class="bottom-watch-pill">
-                                        Available
-                                    </span>
+                                    <div class="bottom-watch-badges">
+                                        <span
+                                            v-if="item.condition"
+                                            class="bottom-watch-pill"
+                                        >
+                                            {{ conditionLabel(item.condition) }}
+                                        </span>
 
-                                    <span
-                                        v-if="item.is_in_demand"
-                                        class="bottom-watch-demand"
-                                    >
-                                        In-Demand
-                                    </span>
+                                        <span class="bottom-watch-pill">
+                                            Available
+                                        </span>
+
+                                        <span
+                                            v-if="item.is_in_demand"
+                                            class="bottom-watch-demand"
+                                        >
+                                            In-Demand
+                                        </span>
+                                    </div>
+
+                                    <div class="bottom-watch-view">
+                                        <span>View details</span>
+                                        <span aria-hidden="true">→</span>
+                                    </div>
                                 </div>
 
-                                <div class="bottom-watch-view">
-                                    <span>View details</span>
-                                    <span aria-hidden="true">→</span>
+                                <div class="bottom-watch-body">
+                                    <h3 class="bottom-watch-title">
+                                        {{
+                                            item.display_name ||
+                                            item.model_name ||
+                                            item.name ||
+                                            item.title ||
+                                            item.reference_number ||
+                                            "Watch Details"
+                                        }}
+                                    </h3>
+
+                                    <div class="bottom-watch-price-row">
+                                        <p class="bottom-watch-price">
+                                            {{
+                                                formatMoney(
+                                                    otherWatchPrice(item),
+                                                )
+                                            }}
+                                        </p>
+
+                                        <p
+                                            v-if="otherWatchSrp(item)"
+                                            class="bottom-watch-srp"
+                                        >
+                                            SRP
+                                            {{
+                                                formatMoney(otherWatchSrp(item))
+                                            }}
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div class="bottom-watch-body">
-                                <h3 class="bottom-watch-title">
-                                    {{
-                                        item.display_name ||
-                                        item.model_name ||
-                                        item.name ||
-                                        item.title ||
-                                        item.reference_number ||
-                                        "Watch Details"
-                                    }}
-                                </h3>
-
-                                <div class="bottom-watch-price-row">
-                                    <p class="bottom-watch-price">
-                                        {{ formatMoney(otherWatchPrice(item)) }}
-                                    </p>
-
-                                    <p
-                                        v-if="otherWatchSrp(item)"
-                                        class="bottom-watch-srp"
-                                    >
-                                        SRP
-                                        {{ formatMoney(otherWatchSrp(item)) }}
-                                    </p>
-                                </div>
-                            </div>
-                        </Link>
+                            </Link>
+                        </div>
                     </div>
 
-                    <p
-                        class="mt-2 text-center text-[8px] font-bold uppercase tracking-[0.18em] text-slate-400 sm:hidden"
+                    <!-- Mobile Swipe Indicator -->
+                    <div
+                        class="mt-1.5 flex items-center justify-center gap-2 sm:hidden"
                     >
-                        Swipe to browse
-                    </p>
+                        <span
+                            class="text-[8px] font-black uppercase tracking-[0.18em] text-slate-400"
+                        >
+                            Swipe to browse
+                        </span>
+
+                        <span class="mobile-swipe-track">
+                            <span class="mobile-swipe-thumb" />
+                        </span>
+                    </div>
                 </section>
             </section>
         </main>
@@ -1088,6 +1140,108 @@ const specs = computed(() => {
     border-color: rgba(11, 58, 86, 0.22);
     background: #eef8fb;
     transform: translateY(-1px);
+}
+
+.mobile-swipe-cue {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    border-radius: 999px;
+    border: 1px solid rgba(11, 58, 86, 0.12);
+    background: rgba(238, 248, 251, 0.9);
+    padding: 0.32rem 0.55rem;
+    font-size: 0.52rem;
+    font-weight: 950;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #0b3a56;
+    box-shadow: 0 8px 18px rgba(11, 58, 86, 0.08);
+}
+
+.mobile-swipe-dot {
+    height: 0.32rem;
+    width: 0.32rem;
+    border-radius: 999px;
+    background: #0b78ff;
+    box-shadow: 0 0 0 4px rgba(0, 132, 255, 0.12);
+}
+
+.mobile-swipe-cue-arrow {
+    display: inline-block;
+    font-size: 0.7rem;
+    animation: mobileSwipeCueArrow 1.25s ease-in-out infinite;
+}
+
+.mobile-floating-swipe-arrow {
+    display: grid;
+    height: 1.55rem;
+    width: 1.55rem;
+    place-items: center;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #0084ff, #0b78ff, #006aff);
+    color: white;
+    font-size: 0.78rem;
+    font-weight: 950;
+    box-shadow: 0 10px 22px rgba(0, 132, 255, 0.28);
+    animation: mobileFloatingSwipeArrow 1.35s ease-in-out infinite;
+}
+
+.mobile-swipe-track {
+    position: relative;
+    display: inline-flex;
+    height: 0.22rem;
+    width: 2.4rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.22);
+}
+
+.mobile-swipe-thumb {
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    width: 42%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #0084ff, #0b78ff);
+    animation: mobileSwipeThumb 1.45s ease-in-out infinite;
+}
+
+@keyframes mobileSwipeCueArrow {
+    0%,
+    100% {
+        transform: translateX(0);
+        opacity: 0.65;
+    }
+
+    50% {
+        transform: translateX(3px);
+        opacity: 1;
+    }
+}
+
+@keyframes mobileFloatingSwipeArrow {
+    0%,
+    100% {
+        transform: translateX(0);
+        opacity: 0.72;
+    }
+
+    50% {
+        transform: translateX(5px);
+        opacity: 1;
+    }
+}
+
+@keyframes mobileSwipeThumb {
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    50% {
+        transform: translateX(1.25rem);
+    }
 }
 
 @media (min-width: 640px) {
