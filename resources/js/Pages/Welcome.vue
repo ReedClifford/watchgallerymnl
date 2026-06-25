@@ -2756,23 +2756,24 @@ button:hover .shop-now-icon {
     letter-spacing: -0.045em;
 }
 
+.shop-card-srp-wrap {
+    display: flex;
+    align-items: flex-start;
+}
+
 .shop-card-old-price {
     margin: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.12rem;
+    display: inline-block;
+    width: fit-content;
     color: #a1a1aa;
     font-size: 0.48rem;
     font-weight: 800;
     line-height: 1.12;
     letter-spacing: 0.01em;
-}
-
-.shop-card-old-price span:last-child {
     text-decoration-line: line-through;
     text-decoration-color: #a1a1aa;
     text-decoration-thickness: 1px;
+    text-decoration-skip-ink: auto;
 }
 
 .shop-grid-card:hover .shop-card-title,
@@ -2797,7 +2798,6 @@ button:hover .shop-now-icon {
     }
 
     .shop-card-old-price {
-        gap: 0.14rem;
         font-size: 0.62rem;
         line-height: 1.14;
     }
@@ -3470,7 +3470,6 @@ button:hover .shop-now-icon {
     }
 
     .shop-card-old-price {
-        gap: 0.1rem;
         font-size: 0.43rem;
         line-height: 1.14;
     }
