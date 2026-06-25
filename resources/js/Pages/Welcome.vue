@@ -740,22 +740,22 @@ const messengerLink = (watch = null) => {
                                 <div class="collage-gradient" />
 
                                 <div
-                                    class="absolute bottom-0 left-0 right-0 p-4 text-left sm:p-6"
+                                    class="collage-caption-main absolute bottom-0 left-0 right-0 p-4 text-left sm:p-6"
                                 >
                                     <p
-                                        class="text-[10px] font-black uppercase tracking-[0.25em] text-white/70"
+                                        class="collage-caption-eyebrow text-[10px] font-black uppercase tracking-[0.25em] text-white/70"
                                     >
                                         Latest Drop
                                     </p>
 
                                     <h3
-                                        class="mt-1 line-clamp-1 text-xl font-black text-white sm:text-2xl"
+                                        class="collage-caption-title mt-1 line-clamp-1 text-xl font-black text-white sm:text-2xl"
                                     >
                                         {{ collageWatches[0].model_name }}
                                     </h3>
 
                                     <p
-                                        class="mt-2 text-sm font-black text-white"
+                                        class="collage-caption-price mt-2 text-sm font-black text-white"
                                     >
                                         {{
                                             formatMoney(
@@ -793,16 +793,16 @@ const messengerLink = (watch = null) => {
                                 <div class="collage-gradient-small" />
 
                                 <div
-                                    class="absolute bottom-0 left-0 right-0 p-3 text-left sm:p-4"
+                                    class="collage-caption-small absolute bottom-0 left-0 right-0 p-3 text-left sm:p-4"
                                 >
                                     <h3
-                                        class="line-clamp-1 text-sm font-black text-white sm:text-base"
+                                        class="collage-small-title line-clamp-1 text-sm font-black text-white sm:text-base"
                                     >
                                         {{ watch.model_name }}
                                     </h3>
 
                                     <p
-                                        class="mt-1 text-xs font-bold text-white/75"
+                                        class="collage-small-price mt-1 text-xs font-bold text-white/75"
                                     >
                                         {{ formatMoney(watch.display_price) }}
                                     </p>
@@ -816,7 +816,7 @@ const messengerLink = (watch = null) => {
                                         v-if="collageWatches[4].image_url"
                                         :src="collageWatches[4].image_url"
                                         :alt="collageWatches[4].model_name"
-                                        class="collage-img opacity-70"
+                                        class="collage-img collage-more-img"
                                     />
 
                                     <div
@@ -827,11 +827,11 @@ const messengerLink = (watch = null) => {
                                     </div>
 
                                     <div
-                                        class="absolute inset-0 grid place-items-center bg-[#071923]/62 text-center backdrop-blur-[1px]"
+                                        class="collage-more-overlay absolute inset-0 grid place-items-center text-center"
                                     >
-                                        <div>
+                                        <div class="collage-more-content">
                                             <p
-                                                class="text-4xl font-black text-white sm:text-5xl"
+                                                class="collage-more-count text-4xl font-black text-white sm:text-5xl"
                                             >
                                                 +{{
                                                     Math.max(
@@ -841,7 +841,7 @@ const messengerLink = (watch = null) => {
                                                 }}
                                             </p>
                                             <p
-                                                class="mt-1 text-xs font-black uppercase tracking-[0.25em] text-white/70"
+                                                class="collage-more-label mt-1 text-xs font-black uppercase tracking-[0.25em] text-white/85"
                                             >
                                                 More Watches
                                             </p>
@@ -1286,20 +1286,16 @@ const messengerLink = (watch = null) => {
                                         class="shop-grid-card-body px-2.5 pb-3.5 pt-3 sm:px-3.5 sm:pb-4 sm:pt-3.5 lg:px-4 lg:pb-5 lg:pt-4"
                                     >
                                         <div
-                                            class="flex min-h-[3.7rem] flex-col justify-end sm:min-h-[4.6rem] lg:min-h-[4.95rem]"
+                                            class="flex min-h-[4.45rem] flex-col justify-between gap-3 sm:min-h-[5.25rem] lg:min-h-[5.6rem]"
                                         >
                                             <h3
-                                                class="line-clamp-2 text-[0.74rem] font-black leading-[1.08] tracking-[-0.03em] text-slate-950 transition-colors duration-300 group-hover:text-[#0b3a56] sm:text-[1rem] sm:leading-[1.06] lg:text-[1.08rem]"
+                                                class="shop-card-title line-clamp-2"
                                             >
                                                 {{ watch.model_name }}
                                             </h3>
 
-                                            <div
-                                                class="mt-2.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-1 sm:mt-3 sm:gap-x-2"
-                                            >
-                                                <p
-                                                    class="text-[0.9rem] font-black leading-none tracking-[-0.04em] text-slate-950 sm:text-[1.14rem] lg:text-[1.22rem]"
-                                                >
+                                            <div class="shop-card-price-stack">
+                                                <p class="shop-card-price">
                                                     {{
                                                         formatMoney(
                                                             watchDisplayPrice(
@@ -1309,19 +1305,22 @@ const messengerLink = (watch = null) => {
                                                     }}
                                                 </p>
 
-                                                <p
+                                                <div
                                                     v-if="
                                                         hasSuggestedSrp(watch)
                                                     "
-                                                    class="text-[0.48rem] font-semibold leading-none text-slate-400 line-through decoration-slate-400 decoration-1 sm:text-[0.66rem] lg:text-[0.7rem]"
+                                                    class="shop-card-srp-wrap"
                                                 >
-                                                    SRP
-                                                    {{
-                                                        formatMoney(
-                                                            watch.suggested_srp,
-                                                        )
-                                                    }}
-                                                </p>
+                                                    <span
+                                                        class="shop-card-old-price"
+                                                    >
+                                                        {{
+                                                            formatMoney(
+                                                                watch.suggested_srp,
+                                                            )
+                                                        }}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -2060,6 +2059,45 @@ const messengerLink = (watch = null) => {
     grid-area: more;
 }
 
+.collage-more-img {
+    opacity: 1;
+    filter: saturate(1.04) contrast(1.04);
+}
+
+.collage-more-overlay {
+    background:
+        linear-gradient(
+            to top,
+            rgba(7, 25, 35, 0.34) 0%,
+            rgba(7, 25, 35, 0.2) 48%,
+            rgba(7, 25, 35, 0.12) 100%
+        ),
+        rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(1px);
+    -webkit-backdrop-filter: blur(1px);
+}
+
+.collage-more-content {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: inherit;
+    border: 0;
+    background: transparent;
+    padding: 1rem;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.collage-more-count,
+.collage-more-label {
+    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.48);
+}
+
 .collage-img {
     height: 100%;
     width: 100%;
@@ -2390,6 +2428,124 @@ button:hover .shop-now-icon {
 }
 
 @media (max-width: 639px) {
+    .collage-grid {
+        height: min(590px, calc(100dvh - 205px));
+        min-height: 500px;
+        gap: 3px;
+        border-radius: 1.35rem;
+    }
+
+    .collage-caption-main {
+        padding: 0.85rem !important;
+    }
+
+    .collage-caption-small {
+        padding: 0.65rem !important;
+    }
+
+    .collage-caption-eyebrow {
+        font-size: 0.48rem !important;
+        letter-spacing: 0.22em !important;
+    }
+
+    .collage-caption-title {
+        max-width: 92%;
+        font-size: 1rem !important;
+        line-height: 1.05 !important;
+        letter-spacing: -0.035em;
+    }
+
+    .collage-caption-price {
+        margin-top: 0.36rem !important;
+        font-size: 0.82rem !important;
+        line-height: 1 !important;
+    }
+
+    .collage-small-title {
+        font-size: 0.76rem !important;
+        line-height: 1.05 !important;
+        letter-spacing: -0.035em;
+    }
+
+    .collage-small-price {
+        margin-top: 0.3rem !important;
+        font-size: 0.66rem !important;
+        line-height: 1 !important;
+    }
+
+    .shop-now-button {
+        padding: 0.72rem 0.72rem 0.72rem 0.95rem;
+        transform: scale(0.9);
+        transform-origin: center;
+        box-shadow:
+            0 18px 54px rgba(15, 23, 42, 0.18),
+            0 0 0 1px rgba(255, 255, 255, 0.82),
+            inset 0 1px 0 rgba(255, 255, 255, 0.96);
+    }
+
+    .shop-now-eyebrow {
+        font-size: 0.48rem;
+        letter-spacing: 0.18em;
+    }
+
+    .shop-now-main {
+        margin-top: 0.04rem;
+        font-size: 1.08rem;
+        letter-spacing: -0.045em;
+    }
+
+    .shop-now-icon {
+        height: 2.28rem;
+        width: 2.28rem;
+        font-size: 1.02rem;
+        box-shadow: 0 10px 24px rgba(11, 58, 86, 0.2);
+    }
+
+    button:hover .shop-now-button {
+        transform: translateY(-2px) scale(0.92);
+    }
+
+    .collage-more-img {
+        opacity: 1;
+        filter: saturate(1.04) contrast(1.05);
+    }
+
+    .collage-more-overlay {
+        background:
+            linear-gradient(
+                to top,
+                rgba(7, 25, 35, 0.3) 0%,
+                rgba(7, 25, 35, 0.17) 52%,
+                rgba(7, 25, 35, 0.1) 100%
+            ),
+            rgba(0, 0, 0, 0.06);
+        backdrop-filter: blur(0.8px);
+        -webkit-backdrop-filter: blur(0.8px);
+    }
+
+    .collage-more-content {
+        height: 100%;
+        width: 100%;
+        border-radius: inherit;
+        background: transparent;
+        padding: 0.75rem;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .collage-more-count {
+        font-size: 2.25rem !important;
+        line-height: 1 !important;
+    }
+
+    .collage-more-label {
+        margin-top: 0.35rem !important;
+        font-size: 0.55rem !important;
+        line-height: 1.1 !important;
+        letter-spacing: 0.22em !important;
+    }
+
     .transaction-card {
         width: 82vw;
         max-width: 310px;
@@ -2573,6 +2729,95 @@ button:hover .shop-now-icon {
         color 0.24s ease;
 }
 
+.shop-card-title {
+    color: #222222;
+    font-size: 0.74rem;
+    font-weight: 900;
+    line-height: 1.08;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+    transition: color 0.24s ease;
+}
+
+.shop-card-price-stack {
+    margin-top: 0.82rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.36rem;
+}
+
+.shop-card-price {
+    margin: 0;
+    color: #111827;
+    font-size: 0.94rem;
+    font-weight: 950;
+    line-height: 1.08;
+    letter-spacing: -0.045em;
+}
+
+.shop-card-old-price {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.12rem;
+    color: #a1a1aa;
+    font-size: 0.48rem;
+    font-weight: 800;
+    line-height: 1.12;
+    letter-spacing: 0.01em;
+}
+
+.shop-card-old-price span:last-child {
+    text-decoration-line: line-through;
+    text-decoration-color: #a1a1aa;
+    text-decoration-thickness: 1px;
+}
+
+.shop-grid-card:hover .shop-card-title,
+.shop-grid-card:focus-visible .shop-card-title {
+    color: #222222;
+}
+
+@media (min-width: 640px) {
+    .shop-card-title {
+        font-size: 1rem;
+        line-height: 1.06;
+    }
+
+    .shop-card-price-stack {
+        margin-top: 0.92rem;
+        gap: 0.42rem;
+    }
+
+    .shop-card-price {
+        font-size: 1.16rem;
+        line-height: 1.08;
+    }
+
+    .shop-card-old-price {
+        gap: 0.14rem;
+        font-size: 0.62rem;
+        line-height: 1.14;
+    }
+}
+
+@media (min-width: 1024px) {
+    .shop-card-title {
+        font-size: 1.1rem;
+        line-height: 1.06;
+    }
+
+    .shop-card-price {
+        font-size: 1.28rem;
+    }
+
+    .shop-card-old-price {
+        font-size: 0.72rem;
+    }
+}
+
 .watch-card-action {
     pointer-events: none;
     position: absolute;
@@ -2608,13 +2853,13 @@ button:hover .shop-now-icon {
 }
 
 .watch-card-action > span:first-child {
-    border: 1px solid rgba(255, 255, 255, 0.74);
+    border: 1px solid rgba(255, 255, 255, 0.78);
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.94);
+    background: rgba(255, 255, 255, 0.96);
     padding: 0.5rem 0.78rem;
-    color: #071923;
+    color: #111827;
     font-size: 0.68rem;
-    font-weight: 950;
+    font-weight: 900;
     letter-spacing: -0.01em;
     box-shadow: 0 14px 32px rgba(7, 25, 35, 0.24);
     backdrop-filter: blur(16px) saturate(150%);
@@ -3018,22 +3263,40 @@ button:hover .shop-now-icon {
     }
 
     .shop-now-button {
-        width: min(78%, 300px);
-        padding: 0.86rem 1.1rem;
+        width: min(64%, 238px);
+        padding: 0.62rem 0.72rem 0.62rem 0.9rem;
+        transform: scale(0.78);
+        transform-origin: center;
+        box-shadow:
+            0 14px 40px rgba(15, 23, 42, 0.16),
+            0 0 0 1px rgba(255, 255, 255, 0.84),
+            inset 0 1px 0 rgba(255, 255, 255, 0.96);
+    }
+
+    .shop-now-button > .relative {
+        gap: 0.72rem;
     }
 
     .shop-now-main {
-        font-size: 1.22rem;
+        margin-top: 0.02rem;
+        font-size: 0.95rem;
+        letter-spacing: -0.04em;
     }
 
     .shop-now-eyebrow {
-        font-size: 0.56rem;
-        letter-spacing: 0.18em;
+        font-size: 0.43rem;
+        letter-spacing: 0.15em;
     }
 
     .shop-now-icon {
-        height: 2.55rem;
-        width: 2.55rem;
+        height: 2rem;
+        width: 2rem;
+        font-size: 0.9rem;
+        box-shadow: 0 9px 22px rgba(11, 58, 86, 0.18);
+    }
+
+    button:hover .shop-now-button {
+        transform: translateY(-1px) scale(0.8);
     }
 }
 
@@ -3187,6 +3450,29 @@ button:hover .shop-now-icon {
         box-shadow:
             0 6px 14px rgba(15, 23, 42, 0.14),
             inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    }
+
+    .shop-card-title {
+        font-size: 0.69rem;
+        line-height: 1.08;
+        letter-spacing: -0.035em;
+    }
+
+    .shop-card-price-stack {
+        margin-top: 0.66rem;
+        gap: 0.3rem;
+    }
+
+    .shop-card-price {
+        font-size: 0.86rem;
+        line-height: 1.08;
+        letter-spacing: -0.045em;
+    }
+
+    .shop-card-old-price {
+        gap: 0.1rem;
+        font-size: 0.43rem;
+        line-height: 1.14;
     }
 
     .shop-grid-card .watch-card-cta {
