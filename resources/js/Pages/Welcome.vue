@@ -1312,12 +1312,6 @@ const messengerLink = (watch = null) => {
                                                     class="shop-card-srp-wrap"
                                                 >
                                                     <span
-                                                        class="shop-card-srp-label"
-                                                    >
-                                                        SRP
-                                                    </span>
-
-                                                    <span
                                                         class="shop-card-old-price"
                                                     >
                                                         {{
@@ -2769,10 +2763,10 @@ button:hover .shop-now-icon {
     width: fit-content;
     max-width: 100%;
     align-items: center;
-    gap: 0.18rem;
+    gap: 0;
     color: #94a3b8;
     opacity: 0.94;
-    font-size: 0.74rem;
+    font-size: 0.8rem;
     font-weight: 850;
     line-height: 1.05;
     letter-spacing: -0.01em;
@@ -2838,7 +2832,7 @@ button:hover .shop-now-icon {
     }
 
     .shop-card-srp-wrap {
-        gap: 0.24rem;
+        gap: 0;
         font-size: 0.84rem;
         line-height: 1.05;
     }
@@ -2858,7 +2852,7 @@ button:hover .shop-now-icon {
     }
 
     .shop-card-srp-wrap {
-        font-size: 0.94rem;
+        font-size: 0.92rem;
     }
 }
 
@@ -3502,21 +3496,21 @@ button:hover .shop-now-icon {
 
     .shop-card-title,
     .shop-card-price {
-        font-size: 1rem;
+        font-size: 0.92rem;
         line-height: 1.08;
-        letter-spacing: -0.04em;
+        letter-spacing: -0.038em;
     }
 
     .shop-card-price-stack {
-        margin-top: 0.58rem;
-        gap: 0.18rem;
+        margin-top: 0.48rem;
+        gap: 0.16rem;
     }
 
     .shop-card-srp-wrap {
-        gap: 0.16rem;
-        font-size: 0.74rem;
+        gap: 0;
+        font-size: 0.72rem;
         line-height: 1.04;
-        letter-spacing: -0.01em;
+        letter-spacing: -0.008em;
     }
 
     .watch-card-action {
