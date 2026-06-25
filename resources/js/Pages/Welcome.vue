@@ -1222,7 +1222,7 @@ const messengerLink = (watch = null) => {
                                 v-if="browsableWatches.length"
                                 name="watch-card"
                                 tag="div"
-                                class="grid grid-cols-3 gap-2 transition duration-300 sm:gap-4 lg:grid-cols-4 lg:gap-5"
+                                class="grid grid-cols-3 gap-2 transition duration-300 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 lg:gap-5"
                                 :class="
                                     isFiltering
                                         ? 'pointer-events-none opacity-45 blur-[1px]'
@@ -1283,10 +1283,10 @@ const messengerLink = (watch = null) => {
                                     </div>
 
                                     <div
-                                        class="shop-grid-card-body px-2.5 pb-3.5 pt-3 sm:px-3.5 sm:pb-4 sm:pt-3.5 lg:px-4 lg:pb-5 lg:pt-4"
+                                        class="shop-grid-card-body px-2 pb-3 pt-2.5 sm:px-3.5 sm:pb-4 sm:pt-3.5 lg:px-4 lg:pb-5 lg:pt-4"
                                     >
                                         <div
-                                            class="flex min-h-[4.45rem] flex-col justify-between gap-3 sm:min-h-[5.25rem] lg:min-h-[5.6rem]"
+                                            class="flex min-h-[4.6rem] flex-col justify-between gap-2 sm:min-h-[5.6rem] sm:gap-3 lg:min-h-[6rem]"
                                         >
                                             <h3
                                                 class="shop-card-title line-clamp-2"
@@ -1311,6 +1311,12 @@ const messengerLink = (watch = null) => {
                                                     "
                                                     class="shop-card-srp-wrap"
                                                 >
+                                                    <span
+                                                        class="shop-card-srp-label"
+                                                    >
+                                                        SRP
+                                                    </span>
+
                                                     <span
                                                         class="shop-card-old-price"
                                                     >
@@ -2730,9 +2736,9 @@ button:hover .shop-now-icon {
 }
 
 .shop-card-title {
-    color: #222222;
-    font-size: 0.74rem;
-    font-weight: 900;
+    color: #0f172a;
+    font-size: 1rem;
+    font-weight: 950;
     line-height: 1.08;
     letter-spacing: -0.035em;
     text-wrap: balance;
@@ -2740,81 +2746,119 @@ button:hover .shop-now-icon {
 }
 
 .shop-card-price-stack {
-    margin-top: 0.82rem;
+    margin-top: 0.58rem;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.36rem;
+    gap: 0.2rem;
 }
 
 .shop-card-price {
     margin: 0;
-    color: #111827;
-    font-size: 0.94rem;
+    color: #071923;
+    font-size: 1rem;
     font-weight: 950;
-    line-height: 1.08;
-    letter-spacing: -0.045em;
+    line-height: 1.05;
+    letter-spacing: -0.042em;
+    font-variant-numeric: tabular-nums;
 }
 
 .shop-card-srp-wrap {
-    display: flex;
-    align-items: flex-start;
+    position: relative;
+    display: inline-flex;
+    width: fit-content;
+    max-width: 100%;
+    align-items: center;
+    gap: 0.18rem;
+    color: #94a3b8;
+    opacity: 0.94;
+    font-size: 0.74rem;
+    font-weight: 850;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+}
+
+.shop-card-srp-wrap::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    left: -0.03rem;
+    right: -0.03rem;
+    top: 54%;
+    height: 1px;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: 0.9;
+    transform: translateY(-50%);
+}
+
+.shop-card-srp-label {
+    color: inherit;
+    font-size: inherit;
+    font-weight: 950;
+    line-height: inherit;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    text-decoration: none;
 }
 
 .shop-card-old-price {
     margin: 0;
     display: inline-block;
+    max-width: 100%;
     width: fit-content;
-    color: #a1a1aa;
-    font-size: 0.48rem;
-    font-weight: 800;
-    line-height: 1.12;
-    letter-spacing: 0.01em;
-    text-decoration-line: line-through;
-    text-decoration-color: #a1a1aa;
-    text-decoration-thickness: 1px;
-    text-decoration-skip-ink: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: inherit;
+    font-size: inherit;
+    font-weight: 850;
+    line-height: inherit;
+    letter-spacing: inherit;
+    text-decoration: none;
+    font-variant-numeric: tabular-nums;
 }
 
 .shop-grid-card:hover .shop-card-title,
 .shop-grid-card:focus-visible .shop-card-title {
-    color: #222222;
+    color: #0b3a56;
 }
 
 @media (min-width: 640px) {
-    .shop-card-title {
-        font-size: 1rem;
-        line-height: 1.06;
+    .shop-card-title,
+    .shop-card-price {
+        font-size: 1.14rem;
+        line-height: 1.08;
+        letter-spacing: -0.038em;
     }
 
     .shop-card-price-stack {
-        margin-top: 0.92rem;
-        gap: 0.42rem;
+        margin-top: 0.74rem;
+        gap: 0.26rem;
     }
 
-    .shop-card-price {
-        font-size: 1.16rem;
-        line-height: 1.08;
-    }
-
-    .shop-card-old-price {
-        font-size: 0.62rem;
-        line-height: 1.14;
+    .shop-card-srp-wrap {
+        gap: 0.24rem;
+        font-size: 0.84rem;
+        line-height: 1.05;
     }
 }
 
 @media (min-width: 1024px) {
-    .shop-card-title {
-        font-size: 1.1rem;
-        line-height: 1.06;
-    }
-
+    .shop-card-title,
     .shop-card-price {
         font-size: 1.28rem;
+        line-height: 1.07;
+        letter-spacing: -0.042em;
     }
 
-    .shop-card-old-price {
-        font-size: 0.72rem;
+    .shop-card-price-stack {
+        margin-top: 0.84rem;
+        gap: 0.3rem;
+    }
+
+    .shop-card-srp-wrap {
+        font-size: 0.94rem;
     }
 }
 
@@ -3437,54 +3481,59 @@ button:hover .shop-now-icon {
     }
 }
 
-/* Final mobile watch-card compact overrides */
+/* Final mobile watch-card readability overrides */
 @media (max-width: 639px) {
+    .shop-grid-card {
+        border-radius: 0.78rem;
+    }
+
     .shop-grid-card .watch-badge-available,
     .shop-grid-card .watch-badge-gender,
     .shop-grid-card .watch-badge-demand {
-        padding: 0.18rem 0.28rem;
-        font-size: 0.28rem;
+        padding: 0.2rem 0.32rem;
+        font-size: 0.38rem;
         line-height: 1;
-        letter-spacing: 0.025em;
+        letter-spacing: 0.02em;
         border-width: 1px;
         box-shadow:
-            0 6px 14px rgba(15, 23, 42, 0.14),
+            0 5px 12px rgba(15, 23, 42, 0.14),
             inset 0 1px 0 rgba(255, 255, 255, 0.22);
     }
 
-    .shop-card-title {
-        font-size: 0.69rem;
+    .shop-card-title,
+    .shop-card-price {
+        font-size: 1rem;
         line-height: 1.08;
-        letter-spacing: -0.035em;
+        letter-spacing: -0.04em;
     }
 
     .shop-card-price-stack {
-        margin-top: 0.66rem;
-        gap: 0.3rem;
+        margin-top: 0.58rem;
+        gap: 0.18rem;
     }
 
-    .shop-card-price {
-        font-size: 0.86rem;
-        line-height: 1.08;
-        letter-spacing: -0.045em;
+    .shop-card-srp-wrap {
+        gap: 0.16rem;
+        font-size: 0.74rem;
+        line-height: 1.04;
+        letter-spacing: -0.01em;
     }
 
-    .shop-card-old-price {
-        font-size: 0.43rem;
-        line-height: 1.14;
+    .watch-card-action {
+        display: none;
     }
 
     .shop-grid-card .watch-card-cta {
-        margin-top: 0.38rem;
-        height: 1.28rem;
-        min-height: 1.28rem;
+        margin-top: 0.44rem;
+        height: 1.5rem;
+        min-height: 1.5rem;
         width: fit-content;
         max-width: 100%;
-        padding-inline: 0.46rem;
-        border-radius: 0.45rem;
-        font-size: 0.4rem;
+        padding-inline: 0.58rem;
+        border-radius: 0.55rem;
+        font-size: 0.52rem;
         line-height: 1;
-        gap: 0.18rem;
+        gap: 0.22rem;
         letter-spacing: 0.015em;
         box-shadow:
             0 6px 14px rgba(0, 0, 0, 0.14),
@@ -3492,7 +3541,7 @@ button:hover .shop-now-icon {
     }
 
     .shop-grid-card .watch-card-cta-arrow {
-        font-size: 0.5rem;
+        font-size: 0.62rem;
         line-height: 1;
     }
 }
