@@ -25,6 +25,8 @@ const props = defineProps({
             search: "",
             condition: "",
             gender: "",
+            in_demand: "",
+            sort: "newest",
             category: "", // legacy fallback for old URLs/controllers
         }),
     },
@@ -69,6 +71,8 @@ const activeCondition = ref(props.filters?.condition ?? "");
 const activeGender = ref(
     normalizeGender(props.filters?.gender ?? props.filters?.category ?? ""),
 );
+const activeInDemand = ref(props.filters?.in_demand ?? "");
+const activeSort = ref(props.filters?.sort ?? "newest");
 
 const shopOpened = ref(false);
 const isShopTransitioning = ref(false);
@@ -101,8 +105,81 @@ const genderFilters = [
     },
 ];
 
+const sortFilters = [
+    {
+        label: "Newest",
+        value: "newest",
+    },
+    {
+        label: "Price: Low to High",
+        value: "price_low",
+    },
+    {
+        label: "Price: High to Low",
+        value: "price_high",
+    },
+    {
+        label: "In-Demand First",
+        value: "in_demand",
+    },
+];
+
 const hasActiveCollectionFilters = computed(() => {
-    return Boolean(search.value || activeCondition.value || activeGender.value);
+    return Boolean(
+        search.value ||
+        activeCondition.value ||
+        activeGender.value ||
+        activeInDemand.value ||
+        activeSort.value !== "newest",
+    );
+});
+
+const activeCollectionFilterPills = computed(() => {
+    const pills = [];
+
+    if (search.value) {
+        pills.push({
+            type: "search",
+            label: `Search: ${search.value}`,
+        });
+    }
+
+    if (activeCondition.value) {
+        const label =
+            conditionFilters.find(
+                (filter) => filter.value === activeCondition.value,
+            )?.label || activeCondition.value;
+
+        pills.push({
+            type: "condition",
+            label,
+        });
+    }
+
+    if (activeGender.value) {
+        pills.push({
+            type: "gender",
+            label: genderLabel(activeGender.value),
+        });
+    }
+
+    if (activeInDemand.value === "1") {
+        pills.push({
+            type: "in_demand",
+            label: "In-Demand",
+        });
+    }
+
+    if (activeSort.value !== "newest") {
+        pills.push({
+            type: "sort",
+            label:
+                sortFilters.find((filter) => filter.value === activeSort.value)
+                    ?.label || "Custom sort",
+        });
+    }
+
+    return pills;
 });
 
 const watchesData = computed(() => {
@@ -115,6 +192,41 @@ const watchesData = computed(() => {
     }
 
     return [];
+});
+
+const browsableWatches = computed(() => {
+    const data = [...watchesData.value];
+
+    if (activeSort.value === "price_low") {
+        return data.sort((a, b) => {
+            const first =
+                Number(watchDisplayPrice(a)) || Number.MAX_SAFE_INTEGER;
+            const second =
+                Number(watchDisplayPrice(b)) || Number.MAX_SAFE_INTEGER;
+
+            return first - second;
+        });
+    }
+
+    if (activeSort.value === "price_high") {
+        return data.sort((a, b) => {
+            const first = Number(watchDisplayPrice(a)) || 0;
+            const second = Number(watchDisplayPrice(b)) || 0;
+
+            return second - first;
+        });
+    }
+
+    if (activeSort.value === "in_demand") {
+        return data.sort((a, b) => {
+            return (
+                Number(Boolean(b.is_in_demand)) -
+                Number(Boolean(a.is_in_demand))
+            );
+        });
+    }
+
+    return data;
 });
 
 const watchPaginationLinks = computed(() => {
@@ -229,6 +341,8 @@ const filterPayload = () => {
         search: search.value?.trim() || undefined,
         condition: activeCondition.value || undefined,
         gender: activeGender.value || undefined,
+        in_demand: activeInDemand.value || undefined,
+        sort: activeSort.value || "newest",
     };
 };
 
@@ -272,10 +386,41 @@ const setGenderFilter = (value) => {
     applyFilters();
 };
 
+const setInDemandFilter = (value) => {
+    activeInDemand.value = activeInDemand.value === value ? "" : value;
+    applyFilters();
+};
+
 const clearCollectionFilters = () => {
     search.value = "";
     activeCondition.value = "";
     activeGender.value = "";
+    activeInDemand.value = "";
+    activeSort.value = "newest";
+    applyFilters();
+};
+
+const clearFilterPill = (type) => {
+    if (type === "search") {
+        search.value = "";
+    }
+
+    if (type === "condition") {
+        activeCondition.value = "";
+    }
+
+    if (type === "gender") {
+        activeGender.value = "";
+    }
+
+    if (type === "in_demand") {
+        activeInDemand.value = "";
+    }
+
+    if (type === "sort") {
+        activeSort.value = "newest";
+    }
+
     applyFilters();
 };
 
@@ -485,12 +630,28 @@ const messengerLink = (watch = null) => {
                     </a>
 
                     <a
-                        href="https://m.me/watchgallerymanila"
+                        :href="messengerLink()"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="rounded-full border border-white/20 bg-white px-5 py-2.5 font-black text-[#071923] shadow-lg shadow-black/15 transition hover:bg-white/90 hover:shadow-black/20 active:scale-95"
+                        aria-label="Message Watch Gallery Manila on Messenger"
+                        class="group/messenger inline-flex items-center gap-2 rounded-full border border-white/15 bg-gradient-to-br from-[#0084ff] via-[#0b78ff] to-[#0b3a56] px-4 py-2.5 font-black text-white shadow-lg shadow-[#0084ff]/25 transition hover:brightness-110 hover:shadow-[#0084ff]/35 active:scale-95"
                     >
-                        Inquire
+                        <span
+                            class="grid h-6 w-6 place-items-center rounded-full bg-white/18 transition group-hover/messenger:bg-white/25"
+                        >
+                            <svg
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                                class="h-4 w-4"
+                                fill="currentColor"
+                            >
+                                <path
+                                    d="M12 2.25c-5.37 0-9.75 4.03-9.75 9 0 2.82 1.41 5.32 3.62 6.97v3.16c0 .33.37.52.64.33l2.9-2.03c.82.23 1.69.36 2.59.36 5.37 0 9.75-4.03 9.75-9s-4.38-8.79-9.75-8.79Zm.98 12.14-2.48-2.65-4.84 2.65 5.31-5.64 2.54 2.65 4.77-2.65-5.3 5.64Z"
+                                />
+                            </svg>
+                        </span>
+
+                        <span>Messenger</span>
                     </a>
                 </nav>
 
@@ -767,7 +928,7 @@ const messengerLink = (watch = null) => {
                         <!-- Shop Toolbar -->
                         <!-- Shop Toolbar -->
                         <div
-                            class="shop-toolbar-card mb-6 rounded-[2rem] border border-slate-200 bg-white p-4 shadow-xl shadow-[#0b3a56]/10 sm:p-5"
+                            class="shop-toolbar-card sticky top-[76px] z-30 mb-6 rounded-[1.35rem] border border-white/80 bg-white/90 p-4 shadow-xl shadow-[#0b3a56]/10 backdrop-blur-2xl sm:top-[92px] sm:p-5"
                         >
                             <div
                                 class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
@@ -801,7 +962,7 @@ const messengerLink = (watch = null) => {
                                 </div>
 
                                 <div
-                                    class="grid gap-2 sm:grid-cols-[1fr_auto] lg:w-[440px]"
+                                    class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_170px_auto] lg:w-[680px]"
                                 >
                                     <input
                                         v-model="search"
@@ -810,6 +971,21 @@ const messengerLink = (watch = null) => {
                                         class="w-full rounded-2xl border-slate-200 bg-slate-50 text-sm text-[#071923] placeholder:text-slate-400 focus:border-[#0b3a56] focus:ring-[#0b3a56]"
                                         @keyup.enter="applySearch"
                                     />
+
+                                    <select
+                                        v-model="activeSort"
+                                        :disabled="isFiltering"
+                                        class="w-full rounded-2xl border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-[#071923] focus:border-[#0b3a56] focus:ring-[#0b3a56] disabled:cursor-not-allowed disabled:opacity-70"
+                                        @change="applyFilters"
+                                    >
+                                        <option
+                                            v-for="filter in sortFilters"
+                                            :key="filter.value"
+                                            :value="filter.value"
+                                        >
+                                            {{ filter.label }}
+                                        </option>
+                                    </select>
 
                                     <button
                                         type="button"
@@ -863,7 +1039,7 @@ const messengerLink = (watch = null) => {
 
                             <!-- Collection Filters -->
                             <div
-                                class="mt-5 grid gap-4 border-t border-slate-100 pt-4 lg:grid-cols-2"
+                                class="mt-5 grid gap-4 border-t border-slate-100 pt-4 lg:grid-cols-3"
                             >
                                 <div>
                                     <p
@@ -948,30 +1124,94 @@ const messengerLink = (watch = null) => {
                                         </button>
                                     </div>
                                 </div>
+
+                                <div>
+                                    <p
+                                        class="mb-2 text-[10px] font-black uppercase tracking-[0.26em] text-slate-400"
+                                    >
+                                        Demand
+                                    </p>
+
+                                    <div class="flex flex-wrap gap-2">
+                                        <button
+                                            type="button"
+                                            :disabled="isFiltering"
+                                            @click="setInDemandFilter('')"
+                                            class="collection-filter-chip"
+                                            :class="
+                                                activeInDemand === ''
+                                                    ? 'collection-filter-chip-active'
+                                                    : ''
+                                            "
+                                        >
+                                            All
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            :disabled="isFiltering"
+                                            @click="setInDemandFilter('1')"
+                                            class="collection-filter-chip"
+                                            :class="
+                                                activeInDemand === '1'
+                                                    ? 'collection-filter-chip-demand-active'
+                                                    : ''
+                                            "
+                                        >
+                                            In-Demand
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
 
                             <div
-                                v-if="hasActiveCollectionFilters"
-                                class="mt-4 flex flex-wrap items-center gap-2"
+                                class="mt-4 flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 p-3 sm:flex-row sm:items-center sm:justify-between"
                             >
-                                <button
-                                    v-if="search"
-                                    type="button"
-                                    :disabled="isFiltering"
-                                    @click="clearSearch"
-                                    class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 active:scale-95"
-                                >
-                                    Clear search
-                                </button>
+                                <div class="min-w-0">
+                                    <p
+                                        class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400"
+                                    >
+                                        Browse Status
+                                    </p>
 
-                                <button
-                                    type="button"
-                                    :disabled="isFiltering"
-                                    @click="clearCollectionFilters"
-                                    class="rounded-2xl border border-[#0b3a56]/15 bg-[#eef8fb] px-4 py-2 text-xs font-black text-[#0b3a56] transition hover:border-[#0b3a56]/30 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 active:scale-95"
+                                    <p
+                                        class="mt-1 text-sm font-black tracking-[-0.01em] text-[#071923]"
+                                    >
+                                        Showing
+                                        {{ browsableWatches.length }} watch<span
+                                            v-if="browsableWatches.length !== 1"
+                                            >es</span
+                                        >
+                                    </p>
+                                </div>
+
+                                <div
+                                    v-if="activeCollectionFilterPills.length"
+                                    class="flex flex-1 flex-wrap items-center gap-2 sm:justify-end"
                                 >
-                                    Clear all filters
-                                </button>
+                                    <button
+                                        v-for="pill in activeCollectionFilterPills"
+                                        :key="`${pill.type}-${pill.label}`"
+                                        type="button"
+                                        :disabled="isFiltering"
+                                        @click="clearFilterPill(pill.type)"
+                                        class="inline-flex items-center gap-1.5 rounded-full border border-[#0b3a56]/15 bg-white px-3 py-1.5 text-[11px] font-black text-[#0b3a56] shadow-sm transition hover:bg-[#eef8fb] disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        <span>{{ pill.label }}</span>
+                                        <span class="text-sm leading-none"
+                                            >×</span
+                                        >
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        :disabled="isFiltering"
+                                        @click="clearCollectionFilters"
+                                        class="rounded-full bg-[#071923] px-3 py-1.5 text-[11px] font-black text-white shadow-sm transition hover:bg-[#0b3a56] disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        Clear all
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -979,10 +1219,10 @@ const messengerLink = (watch = null) => {
                         <!-- Full Image Watch Cards -->
                         <div class="relative">
                             <TransitionGroup
-                                v-if="watchesData.length"
+                                v-if="browsableWatches.length"
                                 name="watch-card"
                                 tag="div"
-                                class="grid grid-cols-2 gap-3 transition duration-300 sm:gap-5 lg:grid-cols-3 lg:gap-6"
+                                class="grid grid-cols-3 gap-2 transition duration-300 sm:gap-4 lg:grid-cols-4 lg:gap-5"
                                 :class="
                                     isFiltering
                                         ? 'pointer-events-none opacity-45 blur-[1px]'
@@ -990,20 +1230,20 @@ const messengerLink = (watch = null) => {
                                 "
                             >
                                 <Link
-                                    v-for="watch in watchesData"
+                                    v-for="watch in browsableWatches"
                                     :key="watch.id"
                                     :href="watchDetailsLink(watch)"
                                     :aria-label="watchCardLabel(watch)"
-                                    class="shop-grid-card group relative block cursor-pointer overflow-hidden rounded-[1.35rem] border border-slate-200 bg-white shadow-xl shadow-[#0b3a56]/10 outline-none transition duration-300 hover:-translate-y-1 hover:border-[#0b3a56]/25 hover:shadow-2xl hover:shadow-[#0b3a56]/15 focus-visible:ring-4 focus-visible:ring-[#0b3a56]/20 sm:rounded-[2rem]"
+                                    class="shop-grid-card group relative block cursor-pointer overflow-hidden rounded-[0.72rem] border border-transparent bg-white outline-none transition duration-300 hover:-translate-y-1 focus-visible:ring-4 focus-visible:ring-[#0b3a56]/20 sm:rounded-[0.82rem] lg:rounded-[0.92rem]"
                                 >
                                     <div
-                                        class="relative aspect-[4/5] overflow-hidden bg-slate-100"
+                                        class="relative aspect-[4/5] overflow-hidden rounded-t-[0.72rem] rounded-b-none bg-slate-100 sm:rounded-t-[0.82rem] lg:rounded-t-[0.92rem]"
                                     >
                                         <img
                                             v-if="watch.image_url"
                                             :src="watch.image_url"
                                             :alt="watch.model_name"
-                                            class="h-full w-full object-cover transition duration-700 group-hover:scale-[1.045]"
+                                            class="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
                                         />
 
                                         <div
@@ -1013,82 +1253,75 @@ const messengerLink = (watch = null) => {
                                             No Image
                                         </div>
 
-                                        <div class="watch-card-overlay" />
-
                                         <div
-                                            class="absolute left-2 right-2 top-2 z-20 flex items-start justify-between gap-1.5 sm:left-4 sm:right-4 sm:top-4 sm:gap-3"
+                                            class="absolute left-1.5 right-1.5 top-1.5 z-20 flex flex-wrap gap-1 sm:left-2.5 sm:right-2.5 sm:top-2.5 sm:gap-1.5 lg:left-3 lg:right-3 lg:top-3"
                                         >
-                                            <div
-                                                class="flex flex-wrap gap-1.5 sm:gap-2"
-                                            >
-                                                <span
-                                                    class="watch-badge-available"
-                                                >
-                                                    {{
-                                                        conditionLabel(
-                                                            watch.condition,
-                                                        )
-                                                    }}
-                                                </span>
+                                            <span class="watch-badge-available">
+                                                {{
+                                                    conditionLabel(
+                                                        watch.condition,
+                                                    )
+                                                }}
+                                            </span>
 
-                                                <span
-                                                    v-if="watch.is_featured"
-                                                    class="watch-badge-drop"
-                                                >
-                                                    Featured
-                                                </span>
-                                            </div>
+                                            <span class="watch-badge-available">
+                                                Available
+                                            </span>
+
+                                            <span
+                                                v-if="watch.is_in_demand"
+                                                class="watch-badge-demand"
+                                            >
+                                                In-Demand
+                                            </span>
                                         </div>
 
+                                        <div class="watch-card-action">
+                                            <span>View details</span>
+                                            <span aria-hidden="true">→</span>
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        class="shop-grid-card-body px-2.5 pb-3.5 pt-3 sm:px-3.5 sm:pb-4 sm:pt-3.5 lg:px-4 lg:pb-5 lg:pt-4"
+                                    >
                                         <div
-                                            class="absolute inset-x-0 bottom-0 z-20 p-2.5 sm:p-5"
+                                            class="flex min-h-[3.7rem] flex-col justify-end sm:min-h-[4.6rem] lg:min-h-[4.95rem]"
                                         >
-                                            <div class="max-w-full">
-                                                <h3
-                                                    class="line-clamp-2 max-w-[96%] text-[11px] font-black leading-[1.08] tracking-[-0.02em] text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.45)] sm:text-xl"
-                                                >
-                                                    {{ watch.model_name }}
-                                                </h3>
+                                            <h3
+                                                class="line-clamp-2 text-[0.74rem] font-black leading-[1.08] tracking-[-0.03em] text-slate-950 transition-colors duration-300 group-hover:text-[#0b3a56] sm:text-[1rem] sm:leading-[1.06] lg:text-[1.08rem]"
+                                            >
+                                                {{ watch.model_name }}
+                                            </h3>
 
-                                                <div
-                                                    class="mt-1.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 sm:mt-2 sm:gap-x-2"
+                                            <div
+                                                class="mt-2.5 flex flex-wrap items-baseline gap-x-1.5 gap-y-1 sm:mt-3 sm:gap-x-2"
+                                            >
+                                                <p
+                                                    class="text-[0.9rem] font-black leading-none tracking-[-0.04em] text-slate-950 sm:text-[1.14rem] lg:text-[1.22rem]"
                                                 >
-                                                    <p
-                                                        class="line-clamp-1 text-[11px] font-black leading-none tracking-[-0.02em] text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.45)] sm:text-lg"
-                                                    >
-                                                        {{
-                                                            formatMoney(
-                                                                watchDisplayPrice(
-                                                                    watch,
-                                                                ),
-                                                            )
-                                                        }}
-                                                    </p>
-
-                                                    <p
-                                                        v-if="
-                                                            hasSuggestedSrp(
+                                                    {{
+                                                        formatMoney(
+                                                            watchDisplayPrice(
                                                                 watch,
-                                                            )
-                                                        "
-                                                        class="line-clamp-1 text-[8px] font-bold leading-none text-white/60 line-through decoration-white/60 decoration-1 drop-shadow-[0_3px_12px_rgba(0,0,0,0.45)] sm:text-xs"
-                                                    >
-                                                        SRP
-                                                        {{
-                                                            formatMoney(
-                                                                watch.suggested_srp,
-                                                            )
-                                                        }}
-                                                    </p>
-                                                </div>
+                                                            ),
+                                                        )
+                                                    }}
+                                                </p>
 
-                                                <span class="watch-card-cta">
-                                                    <span>View Details</span>
-                                                    <span
-                                                        class="watch-card-cta-arrow"
-                                                        >→</span
-                                                    >
-                                                </span>
+                                                <p
+                                                    v-if="
+                                                        hasSuggestedSrp(watch)
+                                                    "
+                                                    class="text-[0.48rem] font-semibold leading-none text-slate-400 line-through decoration-slate-400 decoration-1 sm:text-[0.66rem] lg:text-[0.7rem]"
+                                                >
+                                                    SRP
+                                                    {{
+                                                        formatMoney(
+                                                            watch.suggested_srp,
+                                                        )
+                                                    }}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -1248,7 +1481,7 @@ const messengerLink = (watch = null) => {
                                 class="transaction-card group"
                             >
                                 <div
-                                    class="relative aspect-[4/5] overflow-hidden bg-slate-100"
+                                    class="relative aspect-[4/5] overflow-hidden rounded-t-[0.72rem] rounded-b-none bg-slate-100 sm:rounded-t-[0.82rem] lg:rounded-t-[0.92rem]"
                                 >
                                     <img
                                         v-if="transaction.image_url"
@@ -2172,14 +2405,12 @@ button:hover .shop-now-icon {
 
     .watch-badge-available,
     .watch-badge-gender,
-    .watch-badge-drop {
-        padding: 0.22rem 0.36rem;
-        font-size: 0.38rem;
-        letter-spacing: 0.07em;
+    .watch-badge-demand {
+        padding: 0.28rem 0.44rem;
+        font-size: 0.44rem;
+        letter-spacing: 0.06em;
         line-height: 1;
-        box-shadow:
-            0 5px 14px rgba(0, 0, 0, 0.12),
-            inset 0 1px 0 rgba(255, 255, 255, 0.14);
+        box-shadow: 0 5px 12px rgba(15, 23, 42, 0.12);
     }
 
     .watch-card-cta {
@@ -2305,27 +2536,82 @@ button:hover .shop-now-icon {
         inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
-.shop-grid-card::after {
-    content: "";
-    pointer-events: none;
-    position: absolute;
-    inset: 0;
-    z-index: 24;
-    border-radius: inherit;
-    border: 1px solid rgba(255, 255, 255, 0);
-    opacity: 0;
-    transition:
-        opacity 0.28s ease,
-        border-color 0.28s ease,
-        box-shadow 0.28s ease;
+.collection-filter-chip-demand-active {
+    border-color: rgba(239, 68, 68, 0.34);
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    color: #ffffff;
+    box-shadow:
+        0 14px 36px rgba(220, 38, 38, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
-.shop-grid-card:hover::after {
-    border-color: rgba(255, 255, 255, 0.42);
-    opacity: 1;
+.shop-grid-card {
+    box-shadow: none;
+}
+
+.shop-grid-card:hover {
     box-shadow:
-        inset 0 0 0 1px rgba(255, 255, 255, 0.16),
-        inset 0 -120px 160px rgba(255, 255, 255, 0.06);
+        0 18px 44px rgba(15, 23, 42, 0.12),
+        0 10px 24px rgba(11, 58, 86, 0.1);
+}
+
+.shop-grid-card:hover .shop-grid-card-body {
+    transform: translateY(-1px);
+}
+
+.shop-grid-card-body {
+    transition:
+        transform 0.24s ease,
+        color 0.24s ease;
+}
+
+.watch-card-action {
+    pointer-events: none;
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 18;
+    display: flex;
+    justify-content: center;
+    padding: 2.8rem 0.7rem 0.7rem;
+    background: linear-gradient(to top, rgba(7, 25, 35, 0.52), transparent);
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+        opacity 0.28s ease,
+        transform 0.28s ease;
+}
+
+.watch-card-action span:first-child,
+.watch-card-action span:last-child {
+    display: inline-flex;
+    align-items: center;
+}
+
+.watch-card-action > span:first-child {
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    padding: 0.48rem 0.72rem;
+    color: #071923;
+    font-size: 0.68rem;
+    font-weight: 950;
+    letter-spacing: -0.01em;
+    box-shadow: 0 12px 30px rgba(7, 25, 35, 0.22);
+    backdrop-filter: blur(14px);
+}
+
+.watch-card-action > span:last-child {
+    margin-left: 0.3rem;
+}
+
+.shop-grid-card:hover .watch-card-action {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.shop-grid-card::after,
+.shop-grid-card:hover::after {
+    display: none;
 }
 
 .watch-card-overlay {
@@ -2348,38 +2634,54 @@ button:hover .shop-now-icon {
 
 .watch-badge-available,
 .watch-badge-gender,
-.watch-badge-drop {
+.watch-badge-demand {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 999px;
-    padding: 0.48rem 0.78rem;
-    font-size: 0.62rem;
-    font-weight: 900;
-    letter-spacing: 0.12em;
+    padding: 0.36rem 0.64rem;
+    font-size: 0.48rem;
+    font-weight: 950;
+    letter-spacing: 0.065em;
+    line-height: 1;
     text-transform: uppercase;
-    backdrop-filter: blur(14px);
+    backdrop-filter: blur(20px) saturate(165%);
+    -webkit-backdrop-filter: blur(20px) saturate(165%);
     box-shadow:
-        0 8px 24px rgba(0, 0, 0, 0.14),
-        inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        0 8px 22px rgba(15, 23, 42, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 0.36);
 }
 
 .watch-badge-available {
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.14);
-    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.36);
+    background: linear-gradient(
+        135deg,
+        rgba(11, 58, 86, 0.78),
+        rgba(59, 130, 246, 0.34)
+    );
+    color: #ffffff;
+    text-shadow: 0 1px 10px rgba(7, 25, 35, 0.28);
 }
 
 .watch-badge-gender {
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.9);
-    color: #071923;
+    border: 1px solid rgba(255, 255, 255, 0.36);
+    background: linear-gradient(
+        135deg,
+        rgba(11, 58, 86, 0.78),
+        rgba(59, 130, 246, 0.34)
+    );
+    color: #ffffff;
 }
 
-.watch-badge-drop {
-    border: 1px solid rgba(147, 197, 253, 0.24);
-    background: rgba(11, 58, 86, 0.38);
-    color: #dbeafe;
+.watch-badge-demand {
+    border: 1px solid rgba(254, 202, 202, 0.45);
+    background: linear-gradient(
+        135deg,
+        rgba(220, 38, 38, 0.9),
+        rgba(153, 27, 27, 0.68)
+    );
+    color: #ffffff;
+    text-shadow: 0 1px 10px rgba(127, 29, 29, 0.28);
 }
 
 .watch-card-hover-hint {
@@ -2844,15 +3146,15 @@ button:hover .shop-now-icon {
 @media (max-width: 639px) {
     .shop-grid-card .watch-badge-available,
     .shop-grid-card .watch-badge-gender,
-    .shop-grid-card .watch-badge-drop {
-        padding: 0.16rem 0.3rem;
-        font-size: 0.34rem;
+    .shop-grid-card .watch-badge-demand {
+        padding: 0.18rem 0.28rem;
+        font-size: 0.28rem;
         line-height: 1;
-        letter-spacing: 0.055em;
+        letter-spacing: 0.025em;
         border-width: 1px;
         box-shadow:
-            0 4px 10px rgba(0, 0, 0, 0.1),
-            inset 0 1px 0 rgba(255, 255, 255, 0.12);
+            0 6px 14px rgba(15, 23, 42, 0.14),
+            inset 0 1px 0 rgba(255, 255, 255, 0.22);
     }
 
     .shop-grid-card .watch-card-cta {

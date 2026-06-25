@@ -46,7 +46,6 @@ const reservedWatches = computed(() =>
     Number(props.stats.reserved_watches || 0),
 );
 const soldWatches = computed(() => Number(props.stats.sold_watches || 0));
-const hiddenWatches = computed(() => Number(props.stats.hidden_watches || 0));
 const totalSales = computed(() => Number(props.stats.total_sales || 0));
 const totalProfit = computed(() => Number(props.stats.total_profit || 0));
 
@@ -94,10 +93,10 @@ const statCards = computed(() => [
         value: reservedWatches.value,
         helper: "Temporarily held",
         icon: "⌁",
-        tone: "text-[#b98b63]",
-        card: "border-[#d6b18a]/30 bg-[#fff8f0] shadow-[#b98b63]/10",
-        iconClass: "bg-white text-[#b98b63]",
-        accent: "from-[#f0d8b6] via-[#d6b18a] to-[#b98b63]",
+        tone: "text-[#071923]",
+        card: "border-slate-200 bg-white shadow-[#0b3a56]/10",
+        iconClass: "bg-slate-100 text-[#071923]",
+        accent: "from-slate-200 via-slate-300 to-slate-400",
     },
     {
         label: "Sold",
@@ -146,10 +145,10 @@ const moneyCards = computed(() => [
         value: formatMoney(averageSoldPrice.value),
         helper: "Based on completed sales",
         icon: "≈",
-        tone: "text-[#b98b63]",
-        card: "border-[#d6b18a]/30 bg-[#fff8f0] shadow-[#b98b63]/10",
-        iconClass: "bg-white text-[#b98b63]",
-        accent: "from-[#f0d8b6] via-[#d6b18a] to-[#b98b63]",
+        tone: "text-[#071923]",
+        card: "border-slate-200 bg-white shadow-[#0b3a56]/10",
+        iconClass: "bg-slate-100 text-[#071923]",
+        accent: "from-slate-200 via-slate-300 to-slate-400",
     },
 ]);
 
@@ -177,7 +176,7 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
         >
             <div class="pointer-events-none fixed inset-0 overflow-hidden">
                 <div
-                    class="absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(11,58,86,0.16),transparent_34%),radial-gradient(circle_at_90%_8%,rgba(214,177,138,0.18),transparent_30%),linear-gradient(180deg,#f8fbfd_0%,#eef3f7_46%,#f7f9fb_100%)]"
+                    class="absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(11,58,86,0.16),transparent_34%),radial-gradient(circle_at_90%_8%,rgba(255,255,255,0.32),transparent_30%),linear-gradient(180deg,#f8fbfd_0%,#eef3f7_46%,#f7f9fb_100%)]"
                 />
             </div>
 
@@ -188,13 +187,13 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                 >
                     <div class="relative p-5 sm:p-6 lg:p-7">
                         <div
-                            class="pointer-events-none absolute -right-14 -top-14 h-56 w-56 rounded-full bg-[#d6b18a]/20 blur-3xl"
+                            class="pointer-events-none absolute -right-14 -top-14 h-56 w-56 rounded-full bg-white/10 blur-3xl"
                         />
                         <div
                             class="pointer-events-none absolute bottom-0 left-1/3 h-40 w-40 rounded-full bg-cyan-300/10 blur-3xl"
                         />
                         <div
-                            class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#d6b18a]/60 to-transparent"
+                            class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent"
                         />
 
                         <div
@@ -202,7 +201,7 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                         >
                             <div>
                                 <div
-                                    class="inline-flex items-center gap-2 rounded-full border border-[#d6b18a]/25 bg-[#d6b18a]/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-[#f0d8b6]"
+                                    class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-white/80"
                                 >
                                     Business Control Center
                                 </div>
@@ -236,7 +235,7 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                                     </span>
 
                                     <span
-                                        class="rounded-2xl border border-[#d6b18a]/25 bg-[#d6b18a]/10 px-4 py-2 text-xs font-bold text-[#f0d8b6] backdrop-blur"
+                                        class="rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-bold text-white backdrop-blur"
                                     >
                                         {{ formatMoney(totalSales) }} sales
                                     </span>
@@ -247,7 +246,7 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                                 >
                                     <Link
                                         :href="route('admin.watches.index')"
-                                        class="rounded-2xl bg-gradient-to-r from-[#f0d8b6] via-[#d6b18a] to-[#b98b63] px-5 py-3 text-center text-sm font-black text-[#071923] shadow-lg shadow-black/20 ring-1 ring-white/20 transition hover:brightness-110 active:scale-95"
+                                        class="rounded-2xl bg-white px-5 py-3 text-center text-sm font-black text-[#071923] shadow-lg shadow-black/20 ring-1 ring-white/20 transition hover:bg-white/90 active:scale-95"
                                     >
                                         Manage Inventory
                                     </Link>
@@ -267,7 +266,7 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                                 class="rounded-[1.75rem] border border-white/10 bg-white/10 p-4 shadow-xl shadow-black/20 backdrop-blur-xl"
                             >
                                 <p
-                                    class="text-[10px] font-black uppercase tracking-[0.25em] text-[#f0d8b6]"
+                                    class="text-[10px] font-black uppercase tracking-[0.25em] text-white/80"
                                 >
                                     Financial Snapshot
                                 </p>
@@ -295,7 +294,7 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                                             </div>
 
                                             <div
-                                                class="grid h-12 w-12 place-items-center rounded-2xl bg-[#d6b18a]/15 text-xl font-black text-[#f0d8b6]"
+                                                class="grid h-12 w-12 place-items-center rounded-2xl bg-white/10 text-xl font-black text-white"
                                             >
                                                 ₱
                                             </div>
@@ -318,7 +317,7 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                                                     class="mt-2 text-2xl font-black"
                                                     :class="
                                                         totalProfit >= 0
-                                                            ? 'text-[#f0d8b6]'
+                                                            ? 'text-white'
                                                             : 'text-rose-300'
                                                     "
                                                 >
@@ -332,7 +331,7 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                                                 class="grid h-12 w-12 place-items-center rounded-2xl text-xl font-black"
                                                 :class="
                                                     totalProfit >= 0
-                                                        ? 'bg-[#d6b18a]/15 text-[#f0d8b6]'
+                                                        ? 'bg-white/10 text-white'
                                                         : 'bg-rose-500/15 text-rose-300'
                                                 "
                                             >
@@ -361,7 +360,7 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                                             </div>
 
                                             <div
-                                                class="grid h-12 w-12 place-items-center rounded-2xl bg-white/10 text-xl font-black text-[#f0d8b6]"
+                                                class="grid h-12 w-12 place-items-center rounded-2xl bg-white/10 text-xl font-black text-white"
                                             >
                                                 ◆
                                             </div>
@@ -503,7 +502,7 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                                     class="h-2 overflow-hidden rounded-full bg-slate-100"
                                 >
                                     <div
-                                        class="h-full rounded-full bg-gradient-to-r from-[#f0d8b6] via-[#d6b18a] to-[#b98b63]"
+                                        class="h-full rounded-full bg-gradient-to-r from-slate-400 via-slate-500 to-slate-700"
                                         :style="{ width: `${soldRate}%` }"
                                     />
                                 </div>
@@ -576,33 +575,31 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
 
                         <div class="mt-4 grid grid-cols-2 gap-2">
                             <div class="rounded-2xl bg-slate-50 p-3">
-                                <p class="text-[11px] text-slate-500">Hidden</p>
-                                <p
-                                    class="mt-1 text-xl font-black text-slate-600"
-                                >
-                                    {{ hiddenWatches }}
-                                </p>
-                            </div>
-
-                            <div class="rounded-2xl bg-[#fff8f0] p-3">
                                 <p class="text-[11px] text-slate-500">
                                     Reserved
                                 </p>
                                 <p
-                                    class="mt-1 text-xl font-black text-[#b98b63]"
+                                    class="mt-1 text-xl font-black text-[#071923]"
                                 >
                                     {{ reservedWatches }}
                                 </p>
                             </div>
 
-                            <div
-                                class="col-span-2 rounded-2xl bg-[#eef8fb] p-3"
-                            >
+                            <div class="rounded-2xl bg-[#eef8fb] p-3">
+                                <p class="text-[11px] text-slate-500">Sold</p>
+                                <p
+                                    class="mt-1 text-xl font-black text-[#0b3a56]"
+                                >
+                                    {{ soldWatches }}
+                                </p>
+                            </div>
+
+                            <div class="col-span-2 rounded-2xl bg-slate-50 p-3">
                                 <p class="text-[11px] text-slate-500">
                                     Average Sold Price
                                 </p>
                                 <p
-                                    class="mt-1 text-xl font-black text-[#0b3a56]"
+                                    class="mt-1 text-xl font-black text-[#071923]"
                                 >
                                     {{ formatMoney(averageSoldPrice) }}
                                 </p>
@@ -624,7 +621,7 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                             >
                                 <div>
                                     <p
-                                        class="text-[10px] font-black uppercase tracking-[0.3em] text-[#f0d8b6]"
+                                        class="text-[10px] font-black uppercase tracking-[0.3em] text-white/80"
                                     >
                                         All Time
                                     </p>
@@ -663,7 +660,7 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                                                 class="flex items-center gap-3"
                                             >
                                                 <span
-                                                    class="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-[#f0d8b6] via-[#d6b18a] to-[#b98b63] text-xs font-black text-[#071923] shadow-lg shadow-[#b98b63]/10"
+                                                    class="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-[#071923] text-xs font-black text-white shadow-lg shadow-[#0b3a56]/10"
                                                 >
                                                     {{ index + 1 }}
                                                 </span>
@@ -771,7 +768,7 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                             class="bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] px-4 py-4 text-white sm:px-5"
                         >
                             <p
-                                class="text-[10px] font-black uppercase tracking-[0.3em] text-[#f0d8b6]"
+                                class="text-[10px] font-black uppercase tracking-[0.3em] text-white/80"
                             >
                                 Recent
                             </p>
@@ -835,7 +832,7 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                                                 class="rounded-full px-2.5 py-1 text-[11px] font-bold"
                                                 :class="
                                                     watch.profit >= 0
-                                                        ? 'bg-[#fff8f0] text-[#b98b63]'
+                                                        ? 'bg-slate-100 text-slate-700'
                                                         : 'bg-rose-50 text-rose-600'
                                                 "
                                             >

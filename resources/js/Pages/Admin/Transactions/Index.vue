@@ -40,6 +40,10 @@ const swalTheme = {
     color: "#071923",
     confirmButtonColor: "#0b3a56",
     cancelButtonColor: "#64748b",
+    customClass: {
+        container: "wgm-swal-container",
+        popup: "wgm-swal-popup",
+    },
 };
 
 const toast = Swal.mixin({
@@ -51,6 +55,10 @@ const toast = Swal.mixin({
     background: "#ffffff",
     color: "#071923",
     iconColor: "#0b3a56",
+    customClass: {
+        container: "wgm-swal-container",
+        popup: "wgm-swal-popup",
+    },
 });
 
 const defaultForm = () => ({
@@ -388,9 +396,7 @@ const deleteTransaction = async (transaction) => {
         cancelButtonText: "Cancel",
         reverseButtons: true,
         confirmButtonColor: "#e11d48",
-        cancelButtonColor: "#64748b",
-        background: "#ffffff",
-        color: "#071923",
+        ...swalTheme,
     });
 
     if (!result.isConfirmed) return;
@@ -437,7 +443,7 @@ const deleteTransaction = async (transaction) => {
         >
             <div class="pointer-events-none fixed inset-0 overflow-hidden">
                 <div
-                    class="absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(11,58,86,0.16),transparent_34%),radial-gradient(circle_at_90%_8%,rgba(214,177,138,0.18),transparent_30%),linear-gradient(180deg,#f8fbfd_0%,#eef3f7_46%,#f7f9fb_100%)]"
+                    class="absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(11,58,86,0.16),transparent_34%),radial-gradient(circle_at_90%_8%,rgba(255,255,255,0.32),transparent_30%),linear-gradient(180deg,#f8fbfd_0%,#eef3f7_46%,#f7f9fb_100%)]"
                 />
             </div>
 
@@ -448,13 +454,13 @@ const deleteTransaction = async (transaction) => {
                 >
                     <div class="relative p-5 sm:p-6 lg:p-7">
                         <div
-                            class="pointer-events-none absolute -right-14 -top-14 h-56 w-56 rounded-full bg-[#d6b18a]/20 blur-3xl"
+                            class="pointer-events-none absolute -right-14 -top-14 h-56 w-56 rounded-full bg-white/10 blur-3xl"
                         />
                         <div
                             class="pointer-events-none absolute bottom-0 left-1/3 h-40 w-40 rounded-full bg-cyan-300/10 blur-3xl"
                         />
                         <div
-                            class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#d6b18a]/60 to-transparent"
+                            class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent"
                         />
 
                         <div
@@ -462,7 +468,7 @@ const deleteTransaction = async (transaction) => {
                         >
                             <div>
                                 <div
-                                    class="inline-flex items-center gap-2 rounded-full border border-[#d6b18a]/25 bg-[#d6b18a]/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-[#f0d8b6]"
+                                    class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-white/80"
                                 >
                                     Client Gallery
                                 </div>
@@ -495,7 +501,7 @@ const deleteTransaction = async (transaction) => {
                                     </span>
 
                                     <span
-                                        class="rounded-2xl border border-[#d6b18a]/25 bg-[#d6b18a]/10 px-4 py-2 text-xs font-bold text-[#f0d8b6] backdrop-blur"
+                                        class="rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-bold text-white backdrop-blur"
                                     >
                                         {{ hiddenCount }} hidden
                                     </span>
@@ -506,7 +512,7 @@ const deleteTransaction = async (transaction) => {
                                 class="rounded-[1.75rem] border border-white/10 bg-white/10 p-4 shadow-xl shadow-black/20 backdrop-blur-xl"
                             >
                                 <p
-                                    class="text-[10px] font-black uppercase tracking-[0.25em] text-[#f0d8b6]"
+                                    class="text-[10px] font-black uppercase tracking-[0.25em] text-white/80"
                                 >
                                     Quick Action
                                 </p>
@@ -521,7 +527,7 @@ const deleteTransaction = async (transaction) => {
                                 <button
                                     type="button"
                                     @click="openCreateModal"
-                                    class="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#f0d8b6] via-[#d6b18a] to-[#b98b63] px-5 py-3.5 text-sm font-black text-[#071923] shadow-lg shadow-black/20 ring-1 ring-white/20 transition hover:brightness-110 active:scale-95"
+                                    class="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-white px-5 py-3.5 text-sm font-black text-[#071923] shadow-lg shadow-black/20 ring-1 ring-white/20 transition hover:bg-white/90 active:scale-95"
                                 >
                                     + Add Transaction
                                 </button>
@@ -617,15 +623,15 @@ const deleteTransaction = async (transaction) => {
                     </div>
 
                     <div
-                        class="rounded-3xl border border-[#d6b18a]/30 bg-[#fff8f0] p-4 shadow-xl shadow-[#b98b63]/10"
+                        class="rounded-3xl border border-slate-200 bg-white p-4 shadow-xl shadow-[#0b3a56]/10"
                     >
                         <p
-                            class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500"
+                            class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400"
                         >
                             Hidden
                         </p>
                         <p
-                            class="mt-2 text-2xl font-black text-[#b98b63] sm:text-3xl"
+                            class="mt-2 text-2xl font-black text-[#071923] sm:text-3xl"
                         >
                             {{ hiddenCount }}
                         </p>
@@ -690,7 +696,7 @@ const deleteTransaction = async (transaction) => {
 
                             <div class="absolute bottom-4 left-4 right-4">
                                 <p
-                                    class="text-xs font-black uppercase tracking-[0.25em] text-[#f0d8b6]"
+                                    class="text-xs font-black uppercase tracking-[0.25em] text-white/80"
                                 >
                                     {{
                                         formatDate(transaction.transaction_date)
@@ -760,7 +766,7 @@ const deleteTransaction = async (transaction) => {
                     class="overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#061725] via-[#0b3a56] to-[#071923] p-8 text-center shadow-2xl shadow-[#0b3a56]/25 sm:p-12"
                 >
                     <div
-                        class="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-[#d6b18a]/15 text-2xl text-[#f0d8b6]"
+                        class="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-white/10 text-2xl text-white/80"
                     >
                         ◆
                     </div>
@@ -776,7 +782,7 @@ const deleteTransaction = async (transaction) => {
                     <button
                         type="button"
                         @click="openCreateModal"
-                        class="mt-6 rounded-2xl bg-gradient-to-r from-[#f0d8b6] via-[#d6b18a] to-[#b98b63] px-5 py-3 text-sm font-black text-[#071923] shadow-lg shadow-black/20 ring-1 ring-white/20 transition hover:brightness-110 active:scale-95"
+                        class="mt-6 rounded-2xl bg-white px-5 py-3 text-sm font-black text-[#071923] shadow-lg shadow-black/20 ring-1 ring-white/20 transition hover:bg-white/90 active:scale-95"
                     >
                         Add Transaction
                     </button>
@@ -838,7 +844,7 @@ const deleteTransaction = async (transaction) => {
                                             class="flex flex-wrap items-center gap-2"
                                         >
                                             <p
-                                                class="text-[10px] font-black uppercase tracking-[0.3em] text-[#f0d8b6] sm:text-xs"
+                                                class="text-[10px] font-black uppercase tracking-[0.3em] text-white/80 sm:text-xs"
                                             >
                                                 Watch Gallery Manila
                                             </p>
@@ -847,7 +853,7 @@ const deleteTransaction = async (transaction) => {
                                                 class="rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide"
                                                 :class="
                                                     modalMode === 'create'
-                                                        ? 'bg-[#d6b18a]/15 text-[#f0d8b6]'
+                                                        ? 'bg-white text-[#071923]'
                                                         : 'bg-white/10 text-slate-200'
                                                 "
                                             >
@@ -1022,7 +1028,7 @@ const deleteTransaction = async (transaction) => {
                                                         class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-4"
                                                     >
                                                         <p
-                                                            class="text-xs font-black uppercase tracking-[0.25em] text-[#f0d8b6]"
+                                                            class="text-xs font-black uppercase tracking-[0.25em] text-white/80"
                                                         >
                                                             Preview
                                                         </p>
@@ -1237,5 +1243,16 @@ const deleteTransaction = async (transaction) => {
     .modal-leave-to {
         transform: translateY(24px) scale(0.98);
     }
+}
+
+:global(.wgm-swal-container),
+:global(.swal2-container) {
+    z-index: 2147483647 !important;
+}
+
+:global(.wgm-swal-popup) {
+    border-radius: 1.5rem !important;
+    border: 1px solid rgba(226, 232, 240, 0.95) !important;
+    box-shadow: 0 30px 90px rgba(15, 23, 42, 0.22) !important;
 }
 </style>

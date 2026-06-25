@@ -14,21 +14,34 @@ class WatchController extends Controller
 {
     private const MAX_WATCH_IMAGES = 6;
 
+    private const ADMIN_STATUSES = [
+        'available',
+        'reserved',
+        'sold',
+    ];
+
     public function index(Request $request)
     {
         $status = $request->input('status', 'all');
         $search = trim((string) $request->input('search', ''));
 
+        if ($status !== 'all' && ! in_array($status, self::ADMIN_STATUSES, true)) {
+            $status = 'all';
+        }
+
+        $baseCountQuery = Watch::query()
+            ->whereIn('status', self::ADMIN_STATUSES);
+
         $counts = [
-            'all' => Watch::query()->count(),
+            'all' => (clone $baseCountQuery)->count(),
             'available' => Watch::query()->where('status', 'available')->count(),
-            'sold' => Watch::query()->where('status', 'sold')->count(),
             'reserved' => Watch::query()->where('status', 'reserved')->count(),
-            'hidden' => Watch::query()->where('status', 'hidden')->count(),
+            'sold' => Watch::query()->where('status', 'sold')->count(),
         ];
 
         $watches = Watch::query()
             ->with(['primaryImage', 'images'])
+            ->whereIn('status', self::ADMIN_STATUSES)
             ->when($status !== 'all', function ($query) use ($status) {
                 $query->where('status', $status);
             })
@@ -77,8 +90,8 @@ class WatchController extends Controller
                     'discounted_price' => $watch->discounted_price,
 
                     'status' => $watch->status,
-                    'is_visible' => $watch->is_visible,
-                    'is_featured' => $watch->is_featured,
+                    'is_visible' => (bool) $watch->is_visible,
+                    'is_in_demand' => (bool) $watch->is_in_demand,
 
                     'sold_price' => $watch->sold_price,
                     'date_sold' => optional($watch->date_sold)->format('Y-m-d'),
@@ -93,10 +106,10 @@ class WatchController extends Controller
                             'id' => $image->id,
                             'image_path' => $image->image_path,
                             'image_url' => Storage::url($image->image_path),
-                            'is_primary' => $image->is_primary,
+                            'is_primary' => (bool) $image->is_primary,
                             'sort_order' => $image->sort_order,
                         ];
-                    }),
+                    })->values(),
                 ];
             });
 
@@ -211,9 +224,9 @@ class WatchController extends Controller
             'selling_price' => ['nullable', 'numeric', 'min:0'],
             'discounted_price' => ['nullable', 'numeric', 'min:0'],
 
-            'status' => ['required', 'in:available,reserved,sold,hidden'],
-            'is_visible' => ['boolean'],
-            'is_featured' => ['boolean'],
+            'status' => ['required', 'in:available,reserved,sold'],
+            'is_visible' => ['nullable', 'boolean'],
+            'is_in_demand' => ['nullable', 'boolean'],
 
             'sold_price' => ['nullable', 'numeric', 'min:0'],
             'date_sold' => ['nullable', 'date'],
@@ -233,8 +246,19 @@ class WatchController extends Controller
 
         $validated['gender'] = $validated['gender'] ?? 'unisex';
 
-        $validated['is_visible'] = filter_var($validated['is_visible'] ?? false, FILTER_VALIDATE_BOOLEAN);
-        $validated['is_featured'] = filter_var($validated['is_featured'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        if (($validated['status'] ?? null) === 'hidden') {
+            $validated['status'] = 'available';
+        }
+
+        $validated['is_visible'] = filter_var(
+            $validated['is_visible'] ?? false,
+            FILTER_VALIDATE_BOOLEAN
+        );
+
+        $validated['is_in_demand'] = filter_var(
+            $validated['is_in_demand'] ?? false,
+            FILTER_VALIDATE_BOOLEAN
+        );
 
         if (($validated['status'] ?? null) === 'sold') {
             if (empty($validated['date_sold'])) {

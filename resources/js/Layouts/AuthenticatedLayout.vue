@@ -38,10 +38,10 @@ const showingNavigationDropdown = ref(false);
                             <div class="hidden items-center sm:flex">
                                 <Link
                                     :href="route('dashboard')"
-                                    class="rounded-full px-5 py-2.5 text-sm font-black text-white/75 transition hover:bg-white/10 hover:text-white"
+                                    class="rounded-full border border-transparent px-5 py-2.5 text-sm font-black text-white/75 transition hover:border-white/10 hover:bg-white/10 hover:text-white"
                                     :class="
                                         route().current('dashboard')
-                                            ? 'bg-white/15 text-white'
+                                            ? 'border-white/15 bg-white/15 text-white shadow-inner shadow-white/5'
                                             : ''
                                     "
                                 >
@@ -58,7 +58,7 @@ const showingNavigationDropdown = ref(false);
                                         <span class="inline-flex rounded-md">
                                             <button
                                                 type="button"
-                                                class="inline-flex items-center rounded-full border border-white/10 bg-white/10 px-4 py-2.5 text-sm font-bold leading-4 text-white/80 shadow-inner shadow-white/5 transition duration-150 ease-in-out hover:bg-white/15 hover:text-white focus:outline-none"
+                                                class="inline-flex items-center rounded-full border border-white/10 bg-white/10 px-4 py-2.5 text-sm font-bold leading-4 text-white/80 shadow-inner shadow-white/5 transition duration-150 ease-in-out hover:border-white/20 hover:bg-white/15 hover:text-white focus:outline-none"
                                             >
                                                 {{ $page.props.auth.user.name }}
 
@@ -104,7 +104,7 @@ const showingNavigationDropdown = ref(false);
                                     showingNavigationDropdown =
                                         !showingNavigationDropdown
                                 "
-                                class="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/10 p-2.5 text-white/80 transition duration-150 ease-in-out hover:bg-white/15 hover:text-white focus:outline-none"
+                                class="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/10 p-2.5 text-white/80 transition duration-150 ease-in-out hover:border-white/20 hover:bg-white/15 hover:text-white focus:outline-none"
                                 aria-label="Toggle navigation menu"
                             >
                                 <svg
@@ -143,7 +143,7 @@ const showingNavigationDropdown = ref(false);
                 </div>
 
                 <div
-                    class="h-px bg-gradient-to-r from-transparent via-white/25 to-transparent"
+                    class="h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"
                 />
 
                 <!-- Responsive Navigation Menu -->
@@ -157,10 +157,10 @@ const showingNavigationDropdown = ref(false);
                     <div class="space-y-1 px-4 pb-3 pt-3">
                         <Link
                             :href="route('dashboard')"
-                            class="block rounded-2xl px-4 py-3 text-sm font-black text-white/75 transition hover:bg-white/10 hover:text-white"
+                            class="block rounded-2xl border border-transparent px-4 py-3 text-sm font-black text-white/75 transition hover:border-white/10 hover:bg-white/10 hover:text-white"
                             :class="
                                 route().current('dashboard')
-                                    ? 'bg-white/15 text-white'
+                                    ? 'border-white/15 bg-white/15 text-white'
                                     : ''
                             "
                         >
@@ -185,7 +185,7 @@ const showingNavigationDropdown = ref(false);
                         <div class="mt-3 space-y-1 px-4">
                             <Link
                                 :href="route('profile.edit')"
-                                class="block rounded-2xl px-4 py-3 text-sm font-bold text-white/70 transition hover:bg-white/10 hover:text-white"
+                                class="block rounded-2xl border border-transparent px-4 py-3 text-sm font-bold text-white/70 transition hover:border-white/10 hover:bg-white/10 hover:text-white"
                             >
                                 Profile
                             </Link>
@@ -194,7 +194,7 @@ const showingNavigationDropdown = ref(false);
                                 :href="route('logout')"
                                 method="post"
                                 as="button"
-                                class="block w-full rounded-2xl px-4 py-3 text-left text-sm font-bold text-white/70 transition hover:bg-white/10 hover:text-white"
+                                class="block w-full rounded-2xl border border-transparent px-4 py-3 text-left text-sm font-bold text-white/70 transition hover:border-white/10 hover:bg-white/10 hover:text-white"
                             >
                                 Log Out
                             </Link>
@@ -204,7 +204,10 @@ const showingNavigationDropdown = ref(false);
             </nav>
 
             <!-- Page Heading -->
-            <header class="bg-white shadow" v-if="$slots.header">
+            <header
+                class="border-b border-slate-200 bg-white shadow-sm"
+                v-if="$slots.header"
+            >
                 <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                     <slot name="header" />
                 </div>

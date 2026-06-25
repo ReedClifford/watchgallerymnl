@@ -2,6 +2,8 @@
 import { computed, ref, watch } from "vue";
 import { Head, Link } from "@inertiajs/vue3";
 
+const navbarLogo = "/images/WGM.png";
+
 const props = defineProps({
     watch: {
         type: Object,
@@ -31,6 +33,14 @@ const displayWatchName = computed(() => {
     );
 });
 
+const inclusionText = computed(() => {
+    return String(
+        props.watch.box_papers ||
+            props.watch.box_and_papers ||
+            props.watch.inclusions ||
+            "",
+    ).trim();
+});
 const images = computed(() => {
     if (Array.isArray(props.watch.images) && props.watch.images.length) {
         return props.watch.images;
@@ -145,7 +155,7 @@ watch(
 );
 
 const messengerLink = computed(() => {
-    const text = `Hi Watch Gallery Manila, I would like to inquire about the ${props.watch.condition}  ${displayWatchName.value || ""} (Ref. ${props.watch.reference_number || ""}) with the price of ${formatMoney(actualWatchPrice.value)}. Thank you so much!`;
+    const text = `Hi Watch Gallery Manila, I would like to inquire about the ${props.watch.condition}  ${displayWatchName.value || ""}  with the price of ${formatMoney(actualWatchPrice.value)}. Thank you so much!`;
 
     return `https://m.me/watchgallerymanila?text=${encodeURIComponent(text)}`;
 });
@@ -213,20 +223,19 @@ const specs = computed(() => {
             class="sticky top-0 z-50 border-b border-white/10 bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] shadow-xl shadow-slate-900/15"
         >
             <div
-                class="mx-auto flex h-[58px] max-w-7xl items-center justify-between px-3 sm:h-[74px] sm:px-6 lg:px-8"
+                class="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:h-[86px] sm:px-6 lg:px-8"
             >
-                <Link href="/" class="group min-w-0 text-left">
-                    <p
-                        class="text-[8px] font-black uppercase tracking-[0.38em] text-white/55 sm:text-[9px] sm:tracking-[0.45em]"
-                    >
-                        Watch Gallery
-                    </p>
-
-                    <h1
-                        class="mt-0.5 text-sm font-black tracking-wide text-white transition group-hover:text-white/80 sm:mt-1 sm:text-xl"
-                    >
-                        Manila
-                    </h1>
+                <!-- Logo Only -->
+                <Link
+                    href="/"
+                    class="group flex shrink-0 items-center"
+                    aria-label="Watch Gallery Manila Home"
+                >
+                    <img
+                        :src="navbarLogo"
+                        alt="Watch Gallery Manila"
+                        class="h-16 w-auto origin-left scale-[1.85] object-contain transition duration-300 group-hover:opacity-85 sm:h-20 sm:scale-[2.05] md:h-24"
+                    />
                 </Link>
 
                 <Link
@@ -390,79 +399,190 @@ const specs = computed(() => {
 
                                 <!-- Main Product Card -->
                                 <div
-                                    class="overflow-hidden rounded-[1.35rem] border border-white/10 bg-white/[0.08] shadow-xl shadow-black/10 backdrop-blur-xl"
+                                    class="overflow-hidden rounded-[1.45rem] border border-white/10 bg-white/[0.075] shadow-2xl shadow-black/15 backdrop-blur-xl"
                                 >
-                                    <div class="px-4 py-4 sm:px-5 sm:py-5">
-                                        <p
-                                            class="text-[8px] font-black uppercase tracking-[0.28em] text-white/40 sm:text-[9px]"
-                                        >
-                                            {{
-                                                watch.brand ||
-                                                "Watch Gallery Manila"
-                                            }}
-                                        </p>
-
-                                        <h2
-                                            class="mt-2 text-[1.65rem] font-black leading-[0.98] tracking-[-0.055em] text-white sm:text-4xl"
-                                        >
-                                            {{
-                                                displayWatchName ||
-                                                watch.model_name ||
-                                                "Watch Details"
-                                            }}
-                                        </h2>
-
-                                        <p
-                                            v-if="watch.reference_number"
-                                            class="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white/45 sm:text-xs"
-                                        >
-                                            Ref. {{ watch.reference_number }}
-                                        </p>
-                                    </div>
-
+                                    <!-- Product Header -->
                                     <div
-                                        class="flex flex-col gap-3 border-t border-white/10 px-4 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-5"
+                                        class="relative overflow-hidden px-4 py-4 sm:px-5 sm:py-5"
                                     >
-                                        <div>
-                                            <p
-                                                class="text-[8px] font-black uppercase tracking-[0.22em] text-white/40"
-                                            >
-                                                Listed Price
-                                            </p>
+                                        <div
+                                            class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,rgba(255,255,255,0.12),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.06),transparent_45%)]"
+                                        />
 
+                                        <div class="relative z-10">
                                             <div
-                                                class="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1"
+                                                class="flex items-start justify-between gap-3"
                                             >
-                                                <p
-                                                    class="text-[1.9rem] font-black leading-none tracking-[-0.06em] text-white sm:text-4xl"
-                                                >
-                                                    {{
-                                                        formatMoney(
-                                                            actualWatchPrice,
-                                                        )
-                                                    }}
-                                                </p>
+                                                <div class="min-w-0 flex-1">
+                                                    <p
+                                                        class="text-[8px] font-black uppercase tracking-[0.3em] text-white/40 sm:text-[9px]"
+                                                    >
+                                                        {{
+                                                            watch.brand ||
+                                                            "Watch Gallery Manila"
+                                                        }}
+                                                    </p>
 
-                                                <p
-                                                    v-if="suggestedSrp"
-                                                    class="text-sm font-bold leading-none text-white/45 line-through decoration-white/45 decoration-1 sm:text-base"
-                                                >
-                                                    SRP
-                                                    {{
-                                                        formatMoney(
-                                                            suggestedSrp,
-                                                        )
-                                                    }}
-                                                </p>
+                                                    <h2
+                                                        class="mt-2 text-[1.7rem] font-black leading-[0.96] tracking-[-0.06em] text-white sm:text-4xl"
+                                                    >
+                                                        {{
+                                                            displayWatchName ||
+                                                            watch.model_name ||
+                                                            "Watch Details"
+                                                        }}
+                                                    </h2>
+
+                                                    <div
+                                                        class="mt-3 flex flex-wrap items-center gap-1.5"
+                                                    >
+                                                        <span
+                                                            v-if="
+                                                                watch.reference_number
+                                                            "
+                                                            class="inline-flex rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] text-white/55"
+                                                        >
+                                                            Ref.
+                                                            {{
+                                                                watch.reference_number
+                                                            }}
+                                                        </span>
+
+                                                        <span
+                                                            v-if="
+                                                                watch.condition
+                                                            "
+                                                            class="inline-flex rounded-full border border-emerald-300/15 bg-emerald-300/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] text-emerald-100"
+                                                        >
+                                                            {{
+                                                                watch.condition
+                                                            }}
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        <p
-                                            class="max-w-[15rem] text-xs font-semibold leading-relaxed text-white/50 sm:text-right"
+                                    <!-- Price and Inclusions -->
+                                    <div
+                                        class="border-t border-white/10 p-3 sm:p-4"
+                                    >
+                                        <div
+                                            class="grid gap-3"
+                                            :class="
+                                                inclusionText
+                                                    ? 'sm:grid-cols-[1.05fr_0.95fr]'
+                                                    : 'sm:grid-cols-1'
+                                            "
                                         >
-                                            Message us to confirm availability
-                                            and payment options.
-                                        </p>
+                                            <!-- Price Card -->
+                                            <div
+                                                class="relative overflow-hidden rounded-[1.25rem] border border-white/10 bg-white/[0.09] p-4 shadow-inner shadow-white/5"
+                                            >
+                                                <div
+                                                    class="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-white/10 blur-2xl"
+                                                />
+
+                                                <div class="relative z-10">
+                                                    <div
+                                                        class="flex items-center gap-2"
+                                                    >
+                                                        <span
+                                                            class="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-white/10 bg-white/10 text-white/75"
+                                                        >
+                                                            ₱
+                                                        </span>
+
+                                                        <p
+                                                            class="text-[8px] font-black uppercase tracking-[0.24em] text-white/40"
+                                                        >
+                                                            Listed Price
+                                                        </p>
+                                                    </div>
+
+                                                    <div
+                                                        class="mt-3 flex flex-wrap items-end gap-x-3 gap-y-1"
+                                                    >
+                                                        <p
+                                                            class="text-[2.1rem] font-black leading-none tracking-[-0.065em] text-white sm:text-4xl"
+                                                        >
+                                                            {{
+                                                                formatMoney(
+                                                                    actualWatchPrice,
+                                                                )
+                                                            }}
+                                                        </p>
+
+                                                        <p
+                                                            v-if="suggestedSrp"
+                                                            class="mb-1 text-sm font-bold leading-none text-white/40 line-through decoration-white/40 decoration-1"
+                                                        >
+                                                            SRP
+                                                            {{
+                                                                formatMoney(
+                                                                    suggestedSrp,
+                                                                )
+                                                            }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Inclusions Card -->
+                                            <div
+                                                v-if="inclusionText"
+                                                class="relative overflow-hidden rounded-[1.25rem] border border-white/10 bg-white/[0.09] p-4 shadow-inner shadow-white/5"
+                                            >
+                                                <div
+                                                    class="pointer-events-none absolute -left-10 -bottom-10 h-28 w-28 rounded-full bg-emerald-300/10 blur-2xl"
+                                                />
+
+                                                <div class="relative z-10">
+                                                    <div
+                                                        class="flex items-center gap-2"
+                                                    >
+                                                        <span
+                                                            class="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-emerald-300/15 bg-emerald-300/10 text-emerald-100"
+                                                        >
+                                                            <svg
+                                                                viewBox="0 0 24 24"
+                                                                aria-hidden="true"
+                                                                class="h-4 w-4"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                stroke-width="2.4"
+                                                                stroke-linecap="round"
+                                                                stroke-linejoin="round"
+                                                            >
+                                                                <path
+                                                                    d="M20 6 9 17l-5-5"
+                                                                />
+                                                            </svg>
+                                                        </span>
+
+                                                        <p
+                                                            class="text-[8px] font-black uppercase tracking-[0.24em] text-white/40"
+                                                        >
+                                                            Inclusions
+                                                        </p>
+                                                    </div>
+
+                                                    <p
+                                                        class="mt-3 text-base font-black leading-snug tracking-[-0.02em] text-white"
+                                                    >
+                                                        {{ inclusionText }}
+                                                    </p>
+
+                                                    <p
+                                                        class="mt-1.5 text-[11px] font-semibold leading-relaxed text-white/45"
+                                                    >
+                                                        Included package details
+                                                        for this watch.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 

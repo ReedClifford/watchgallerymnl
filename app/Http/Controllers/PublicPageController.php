@@ -16,13 +16,18 @@ class PublicPageController extends Controller
     {
         $search = trim((string) $request->input('search', ''));
         $normalizedSearch = $this->normalizeSearchTerm($search);
+
         $condition = trim((string) $request->input('condition', ''));
+
         $gender = $this->normalizeGenderFilter(
             $request->input('gender', $request->input('category', ''))
         );
 
+        $inDemand = trim((string) $request->input('in_demand', ''));
+
         $hasGenderColumn = Schema::hasColumn('watches', 'gender');
         $hasCategoryColumn = Schema::hasColumn('watches', 'category');
+        $hasInDemandColumn = Schema::hasColumn('watches', 'is_in_demand');
 
         $conditionMap = [
             'brand_new' => [
@@ -99,6 +104,9 @@ class PublicPageController extends Controller
             ->when(isset($conditionMap[$condition]), function ($query) use ($conditionMap, $condition) {
                 $query->whereIn('condition', $conditionMap[$condition]);
             })
+            ->when($inDemand === '1' && $hasInDemandColumn, function ($query) {
+                $query->where('is_in_demand', true);
+            })
             ->when($gender !== '' && $hasGenderColumn, function ($query) use ($gender) {
                 if ($gender === 'unisex') {
                     $query->where(function ($subQuery) {
@@ -133,6 +141,7 @@ class PublicPageController extends Controller
                 'search' => $search,
                 'condition' => $condition,
                 'gender' => $gender,
+                'in_demand' => $inDemand,
 
                 // Legacy fallback so old Vue state/URLs do not break.
                 'category' => $gender,
@@ -209,8 +218,12 @@ class PublicPageController extends Controller
 
             'status' => $watch->status,
             'is_visible' => (bool) $watch->is_visible,
-            'is_featured' => (bool) $watch->is_featured,
-            'allow_inquiry' => (bool) $watch->allow_inquiry,
+            'is_in_demand' => (bool) ($watch->is_in_demand ?? false),
+
+            // Legacy fallback. You can remove this later once all Vue files use is_in_demand.
+            'is_featured' => (bool) ($watch->is_featured ?? false),
+
+            'allow_inquiry' => (bool) ($watch->allow_inquiry ?? true),
 
             'image_url' => $watch->primaryImage
                 ? $this->storageUrl($watch->primaryImage->image_path)
@@ -251,6 +264,9 @@ class PublicPageController extends Controller
             'bracelet_or_strap' => $watch->bracelet_or_strap,
             'water_resistance' => $watch->water_resistance,
             'warranty_type' => $watch->warranty_type,
+
+            // Important: this sends box_papers to Vue.
+            'box_papers' => $watch->box_papers,
         ];
     }
 

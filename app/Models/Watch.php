@@ -34,6 +34,7 @@ class Watch extends Model
         'buyer_name',
         'gender',
         'suggested_srp',
+        'is_in_demand',
     ];
 
     protected $casts = [
@@ -44,6 +45,7 @@ class Watch extends Model
         'is_visible' => 'boolean',
         'is_featured' => 'boolean',
         'date_sold' => 'date',
+        'is_in_demand' => 'boolean',
     ];
 
     public function images()

@@ -24,7 +24,6 @@ const props = defineProps({
             available: 0,
             sold: 0,
             reserved: 0,
-            hidden: 0,
         }),
     },
 });
@@ -151,9 +150,16 @@ const statusOptions = [
         label: "Available",
         description: "Shown as available stock",
     },
-    { value: "reserved", label: "Reserved", description: "Temporarily held" },
-    { value: "sold", label: "Sold", description: "Completed sale" },
-    { value: "hidden", label: "Hidden", description: "Not for public display" },
+    {
+        value: "reserved",
+        label: "Reserved",
+        description: "Temporarily held",
+    },
+    {
+        value: "sold",
+        label: "Sold",
+        description: "Completed sale",
+    },
 ];
 
 const swalTheme = {
@@ -161,6 +167,10 @@ const swalTheme = {
     color: "#071923",
     confirmButtonColor: "#0b3a56",
     cancelButtonColor: "#64748b",
+    customClass: {
+        container: "wgm-swal-container",
+        popup: "wgm-swal-popup",
+    },
 };
 
 const toast = Swal.mixin({
@@ -172,6 +182,10 @@ const toast = Swal.mixin({
     background: "#ffffff",
     color: "#071923",
     iconColor: "#0b3a56",
+    customClass: {
+        container: "wgm-swal-container",
+        popup: "wgm-swal-popup",
+    },
 });
 
 const defaultForm = () => ({
@@ -196,7 +210,7 @@ const defaultForm = () => ({
     discounted_price: "",
     status: "available",
     is_visible: true,
-    is_featured: false,
+    is_in_demand: false,
     sold_price: "",
     date_sold: "",
     buyer_name: "",
@@ -215,13 +229,16 @@ const filterOptions = computed(() => [
         label: "Available",
         count: props.counts?.available ?? 0,
     },
-    { value: "sold", label: "Sold", count: props.counts?.sold ?? 0 },
     {
         value: "reserved",
         label: "Reserved",
         count: props.counts?.reserved ?? 0,
     },
-    { value: "hidden", label: "Hidden", count: props.counts?.hidden ?? 0 },
+    {
+        value: "sold",
+        label: "Sold",
+        count: props.counts?.sold ?? 0,
+    },
 ]);
 
 const currentStatusFilter = computed(() => props.filters?.status ?? "all");
@@ -318,12 +335,11 @@ const formatMoney = (value) => {
 const statusClass = (status) => {
     const classes = {
         available: "bg-[#eef8fb] text-[#0b3a56] ring-[#0b3a56]/20",
-        reserved: "bg-[#fff8f0] text-[#b98b63] ring-[#d6b18a]/30",
+        reserved: "bg-slate-100 text-slate-600 ring-slate-300",
         sold: "bg-[#071923] text-white ring-[#071923]/20",
-        hidden: "bg-slate-100 text-slate-500 ring-slate-300",
     };
 
-    return classes[status] || classes.hidden;
+    return classes[status] || "bg-slate-100 text-slate-500 ring-slate-300";
 };
 
 const applyFilters = (status = currentStatusFilter.value) => {
@@ -407,9 +423,12 @@ const openEditModal = (watch) => {
         suggested_srp: watch.suggested_srp ?? "",
         selling_price: watch.selling_price ?? "",
         discounted_price: watch.discounted_price ?? "",
-        status: watch.status ?? "available",
+        status:
+            watch.status === "hidden"
+                ? "available"
+                : (watch.status ?? "available"),
         is_visible: Boolean(watch.is_visible),
-        is_featured: Boolean(watch.is_featured),
+        is_in_demand: Boolean(watch.is_in_demand),
         sold_price: watch.sold_price ?? "",
         date_sold: watch.date_sold ?? "",
         buyer_name: watch.buyer_name ?? "",
@@ -517,9 +536,7 @@ const removeExistingImage = async (image) => {
         cancelButtonText: "Cancel",
         reverseButtons: true,
         confirmButtonColor: "#e11d48",
-        cancelButtonColor: "#64748b",
-        background: "#ffffff",
-        color: "#071923",
+        ...swalTheme,
     });
 
     if (!result.isConfirmed) return;
@@ -640,7 +657,7 @@ const goToErrorTab = (errors) => {
                 "discounted_price",
                 "status",
                 "is_visible",
-                "is_featured",
+                "is_in_demand",
                 "sold_price",
                 "date_sold",
                 "buyer_name",
@@ -771,9 +788,7 @@ const deleteWatch = async (watch) => {
         cancelButtonText: "Cancel",
         reverseButtons: true,
         confirmButtonColor: "#e11d48",
-        cancelButtonColor: "#64748b",
-        background: "#ffffff",
-        color: "#071923",
+        ...swalTheme,
     });
 
     if (!result.isConfirmed) return;
@@ -819,7 +834,7 @@ const deleteWatch = async (watch) => {
         >
             <div class="pointer-events-none fixed inset-0 overflow-hidden">
                 <div
-                    class="absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(11,58,86,0.16),transparent_34%),radial-gradient(circle_at_90%_8%,rgba(214,177,138,0.18),transparent_30%),linear-gradient(180deg,#f8fbfd_0%,#eef3f7_46%,#f7f9fb_100%)]"
+                    class="absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(11,58,86,0.16),transparent_34%),radial-gradient(circle_at_90%_8%,rgba(255,255,255,0.32),transparent_30%),linear-gradient(180deg,#f8fbfd_0%,#eef3f7_46%,#f7f9fb_100%)]"
                 />
             </div>
 
@@ -830,13 +845,13 @@ const deleteWatch = async (watch) => {
                 >
                     <div class="relative p-5 sm:p-6 lg:p-7">
                         <div
-                            class="pointer-events-none absolute -right-14 -top-14 h-56 w-56 rounded-full bg-[#d6b18a]/20 blur-3xl"
+                            class="pointer-events-none absolute -right-14 -top-14 h-56 w-56 rounded-full bg-white/10 blur-3xl"
                         />
                         <div
                             class="pointer-events-none absolute bottom-0 left-1/3 h-40 w-40 rounded-full bg-cyan-300/10 blur-3xl"
                         />
                         <div
-                            class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#d6b18a]/60 to-transparent"
+                            class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent"
                         />
 
                         <div
@@ -844,7 +859,7 @@ const deleteWatch = async (watch) => {
                         >
                             <div>
                                 <div
-                                    class="inline-flex items-center gap-2 rounded-full border border-[#d6b18a]/25 bg-[#d6b18a]/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-[#f0d8b6]"
+                                    class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-white/80"
                                 >
                                     Watch Gallery Manila
                                 </div>
@@ -858,9 +873,9 @@ const deleteWatch = async (watch) => {
                                 <p
                                     class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300 sm:text-base"
                                 >
-                                    Manage available, reserved, sold, and hidden
-                                    watch listings with a cleaner premium
-                                    control panel.
+                                    Manage available, reserved, and sold watch
+                                    listings with a cleaner premium control
+                                    panel.
                                 </p>
 
                                 <div class="mt-6 flex flex-wrap gap-2">
@@ -877,7 +892,7 @@ const deleteWatch = async (watch) => {
                                     </span>
 
                                     <span
-                                        class="rounded-2xl border border-[#d6b18a]/25 bg-[#d6b18a]/10 px-4 py-2 text-xs font-bold text-[#f0d8b6] backdrop-blur"
+                                        class="rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-bold text-white backdrop-blur"
                                     >
                                         {{ soldCount }} sold
                                     </span>
@@ -888,7 +903,7 @@ const deleteWatch = async (watch) => {
                                 class="rounded-[1.75rem] border border-white/10 bg-white/10 p-4 shadow-xl shadow-black/20 backdrop-blur-xl"
                             >
                                 <p
-                                    class="text-[10px] font-black uppercase tracking-[0.25em] text-[#f0d8b6]"
+                                    class="text-[10px] font-black uppercase tracking-[0.25em] text-white/80"
                                 >
                                     Quick Action
                                 </p>
@@ -903,7 +918,7 @@ const deleteWatch = async (watch) => {
                                 <button
                                     type="button"
                                     @click="openCreateModal"
-                                    class="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#f0d8b6] via-[#d6b18a] to-[#b98b63] px-5 py-3.5 text-sm font-black text-[#071923] shadow-lg shadow-black/20 ring-1 ring-white/20 transition hover:brightness-110 active:scale-95"
+                                    class="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-white px-5 py-3.5 text-sm font-black text-[#071923] shadow-lg shadow-black/20 ring-1 ring-white/20 transition hover:bg-white/90 active:scale-95"
                                 >
                                     + Add Watch
                                 </button>
@@ -999,15 +1014,15 @@ const deleteWatch = async (watch) => {
                     </div>
 
                     <div
-                        class="rounded-3xl border border-[#d6b18a]/30 bg-[#fff8f0] p-4 shadow-xl shadow-[#b98b63]/10"
+                        class="rounded-3xl border border-slate-200 bg-white p-4 shadow-xl shadow-[#0b3a56]/10"
                     >
                         <p
-                            class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500"
+                            class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400"
                         >
                             Reserved
                         </p>
                         <p
-                            class="mt-2 text-2xl font-black text-[#b98b63] sm:text-3xl"
+                            class="mt-2 text-2xl font-black text-[#071923] sm:text-3xl"
                         >
                             {{ reservedCount }}
                         </p>
@@ -1074,15 +1089,15 @@ const deleteWatch = async (watch) => {
                             </div>
 
                             <div
-                                v-if="watch.is_featured"
-                                class="absolute right-4 top-4 rounded-full bg-gradient-to-r from-[#f0d8b6] via-[#d6b18a] to-[#b98b63] px-3 py-1 text-xs font-black text-[#071923] shadow-lg shadow-black/10"
+                                v-if="watch.is_in_demand"
+                                class="absolute right-4 top-4 rounded-full border border-white/20 bg-white px-3 py-1 text-xs font-black text-[#071923] shadow-lg shadow-black/10"
                             >
-                                Featured
+                                In-Demand
                             </div>
 
                             <div class="absolute bottom-4 left-4 right-4">
                                 <p
-                                    class="text-xs font-black uppercase tracking-[0.25em] text-[#f0d8b6]"
+                                    class="text-xs font-black uppercase tracking-[0.25em] text-white/80"
                                 >
                                     {{ watch.brand }}
                                 </p>
@@ -1153,7 +1168,7 @@ const deleteWatch = async (watch) => {
                                         {{
                                             watch.is_visible
                                                 ? "Visible"
-                                                : "Hidden"
+                                                : "Not Visible"
                                         }}
                                     </span>
                                 </div>
@@ -1168,7 +1183,7 @@ const deleteWatch = async (watch) => {
 
                                 <span
                                     v-if="watch.gender"
-                                    class="rounded-full bg-[#fff8f0] px-3 py-1.5 text-xs font-semibold capitalize text-[#b98b63]"
+                                    class="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold capitalize text-slate-600"
                                 >
                                     {{ watch.gender }}
                                 </span>
@@ -1226,7 +1241,7 @@ const deleteWatch = async (watch) => {
                     class="overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#061725] via-[#0b3a56] to-[#071923] p-8 text-center shadow-2xl shadow-[#0b3a56]/25 sm:p-12"
                 >
                     <div
-                        class="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-[#d6b18a]/15 text-2xl text-[#f0d8b6]"
+                        class="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-white/10 text-2xl text-white/80"
                     >
                         ◉
                     </div>
@@ -1242,7 +1257,7 @@ const deleteWatch = async (watch) => {
                     <button
                         type="button"
                         @click="resetFilters"
-                        class="mt-6 rounded-2xl bg-gradient-to-r from-[#f0d8b6] via-[#d6b18a] to-[#b98b63] px-5 py-3 text-sm font-black text-[#071923] shadow-lg shadow-black/20 ring-1 ring-white/20 transition hover:brightness-110 active:scale-95"
+                        class="mt-6 rounded-2xl bg-white px-5 py-3 text-sm font-black text-[#071923] shadow-lg shadow-black/20 ring-1 ring-white/20 transition hover:bg-white/90 active:scale-95"
                     >
                         Clear Filters
                     </button>
@@ -1304,7 +1319,7 @@ const deleteWatch = async (watch) => {
                                             class="flex flex-wrap items-center gap-2"
                                         >
                                             <p
-                                                class="text-[10px] font-black uppercase tracking-[0.3em] text-[#f0d8b6] sm:text-xs"
+                                                class="text-[10px] font-black uppercase tracking-[0.3em] text-white/80 sm:text-xs"
                                             >
                                                 Watch Gallery Manila
                                             </p>
@@ -1313,7 +1328,7 @@ const deleteWatch = async (watch) => {
                                                 class="rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide"
                                                 :class="
                                                     modalMode === 'create'
-                                                        ? 'bg-[#d6b18a]/15 text-[#f0d8b6]'
+                                                        ? 'bg-white text-[#071923]'
                                                         : 'bg-white/10 text-slate-200'
                                                 "
                                             >
@@ -1356,7 +1371,7 @@ const deleteWatch = async (watch) => {
                                         class="rounded-xl px-2 py-3 text-center transition active:scale-95"
                                         :class="
                                             activeModalTab === tab.key
-                                                ? 'bg-gradient-to-r from-[#f0d8b6] via-[#d6b18a] to-[#b98b63] text-[#071923] shadow-lg shadow-black/20 ring-1 ring-white/20'
+                                                ? 'bg-white text-[#071923] shadow-lg shadow-black/20 ring-1 ring-white/20'
                                                 : 'text-slate-300 hover:bg-white/10 hover:text-white'
                                         "
                                     >
@@ -1676,7 +1691,7 @@ const deleteWatch = async (watch) => {
                                             </div>
 
                                             <div
-                                                class="grid gap-3 sm:grid-cols-2"
+                                                class="grid gap-3 sm:grid-cols-3"
                                             >
                                                 <button
                                                     v-for="status in statusOptions"
@@ -1733,7 +1748,7 @@ const deleteWatch = async (watch) => {
                                                 class="mt-5 grid gap-3 sm:grid-cols-2"
                                             >
                                                 <label
-                                                    class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                                                    class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-[#0b3a56]/25 hover:bg-[#f8fafc]"
                                                 >
                                                     <input
                                                         v-model="
@@ -1758,11 +1773,11 @@ const deleteWatch = async (watch) => {
                                                 </label>
 
                                                 <label
-                                                    class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                                                    class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-[#0b3a56]/25 hover:bg-[#f8fafc]"
                                                 >
                                                     <input
                                                         v-model="
-                                                            form.is_featured
+                                                            form.is_in_demand
                                                         "
                                                         type="checkbox"
                                                         class="rounded border-slate-300 bg-white text-[#0b3a56] focus:ring-[#0b3a56]"
@@ -1771,13 +1786,14 @@ const deleteWatch = async (watch) => {
                                                         <p
                                                             class="text-sm font-black text-[#071923]"
                                                         >
-                                                            Featured watch
+                                                            In-Demand watch
                                                         </p>
                                                         <p
                                                             class="text-xs text-slate-500"
                                                         >
-                                                            Highlight on
-                                                            homepage.
+                                                            Adds an in-demand
+                                                            label to this
+                                                            listing.
                                                         </p>
                                                     </div>
                                                 </label>
@@ -1948,7 +1964,7 @@ const deleteWatch = async (watch) => {
 
                                                     <span
                                                         v-if="image.is_primary"
-                                                        class="absolute bottom-1 left-1 right-1 rounded-lg bg-gradient-to-r from-[#f0d8b6] via-[#d6b18a] to-[#b98b63] px-2 py-1 text-center text-[10px] font-black text-[#071923]"
+                                                        class="absolute bottom-1 left-1 right-1 rounded-lg bg-white px-2 py-1 text-center text-[10px] font-black text-[#071923]"
                                                     >
                                                         Primary
                                                     </span>
@@ -2092,5 +2108,16 @@ const deleteWatch = async (watch) => {
     .modal-leave-to {
         transform: translateY(24px) scale(0.98);
     }
+}
+
+:global(.wgm-swal-container),
+:global(.swal2-container) {
+    z-index: 2147483647 !important;
+}
+
+:global(.wgm-swal-popup) {
+    border-radius: 1.5rem !important;
+    border: 1px solid rgba(226, 232, 240, 0.95) !important;
+    box-shadow: 0 30px 90px rgba(15, 23, 42, 0.22) !important;
 }
 </style>

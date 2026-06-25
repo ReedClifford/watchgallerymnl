@@ -48,7 +48,7 @@ const closeSidebar = () => {
         <!-- Soft White Base Background -->
         <div class="pointer-events-none fixed inset-0 overflow-hidden">
             <div
-                class="absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(11,58,86,0.12),transparent_32%),radial-gradient(circle_at_88%_8%,rgba(214,177,138,0.16),transparent_30%),linear-gradient(180deg,#ffffff_0%,#f8fafc_48%,#ffffff_100%)]"
+                class="absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(11,58,86,0.12),transparent_32%),radial-gradient(circle_at_88%_8%,rgba(255,255,255,0.30),transparent_30%),linear-gradient(180deg,#ffffff_0%,#f8fafc_48%,#ffffff_100%)]"
             />
             <div
                 class="absolute left-1/2 top-0 h-px w-[80vw] -translate-x-1/2 bg-gradient-to-r from-transparent via-[#0b3a56]/20 to-transparent"
@@ -75,7 +75,7 @@ const closeSidebar = () => {
                     class="absolute -left-20 top-0 h-72 w-72 rounded-full bg-white/10 blur-3xl"
                 />
                 <div
-                    class="absolute right-0 top-28 h-80 w-80 rounded-full bg-[#d6b18a]/15 blur-3xl"
+                    class="absolute right-0 top-28 h-80 w-80 rounded-full bg-white/10 blur-3xl"
                 />
                 <div
                     class="absolute bottom-0 left-12 h-72 w-72 rounded-full bg-[#0b3a56]/35 blur-3xl"
@@ -91,7 +91,7 @@ const closeSidebar = () => {
                     aria-label="Watch Gallery Manila Dashboard"
                 >
                     <div
-                        class="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#d6b18a]/25 blur-2xl"
+                        class="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/15 blur-2xl"
                     />
 
                     <div
@@ -122,7 +122,7 @@ const closeSidebar = () => {
                     class="group flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-semibold transition active:scale-[0.98]"
                     :class="
                         item.active
-                            ? 'bg-gradient-to-r from-[#f0d8b6] via-[#d6b18a] to-[#b98b63] text-[#071923] shadow-lg shadow-black/20 ring-1 ring-white/20'
+                            ? 'bg-white text-[#071923] shadow-lg shadow-black/20 ring-1 ring-white/20'
                             : 'text-slate-200 hover:bg-white/10 hover:text-white'
                     "
                     @click="closeSidebar"
@@ -132,7 +132,7 @@ const closeSidebar = () => {
                         :class="
                             item.active
                                 ? 'bg-[#071923]/10 text-[#071923]'
-                                : 'bg-white/10 text-[#f0d8b6] group-hover:bg-white/15 group-hover:text-white'
+                                : 'bg-white/10 text-white/75 group-hover:bg-white/15 group-hover:text-white'
                         "
                     >
                         {{ item.icon }}
@@ -154,7 +154,7 @@ const closeSidebar = () => {
                 >
                     <div class="flex items-center gap-3">
                         <div
-                            class="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-[#f0d8b6] via-[#d6b18a] to-[#b98b63] text-base font-black text-[#071923] shadow-lg shadow-black/20"
+                            class="grid h-11 w-11 place-items-center rounded-2xl bg-white text-base font-black text-[#071923] shadow-lg shadow-black/20 ring-1 ring-white/20"
                         >
                             {{ user?.name?.charAt(0) || "A" }}
                         </div>
@@ -171,7 +171,7 @@ const closeSidebar = () => {
                         :href="route('logout')"
                         method="post"
                         as="button"
-                        class="mt-4 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-slate-200 transition hover:border-rose-300/40 hover:bg-rose-500/10 hover:text-rose-200 active:scale-95"
+                        class="mt-4 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-slate-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white active:scale-95"
                     >
                         Logout
                     </Link>
@@ -214,7 +214,7 @@ const closeSidebar = () => {
                         <!-- Desktop Topbar Text -->
                         <div class="hidden min-w-0 lg:block">
                             <p
-                                class="text-[10px] font-bold uppercase tracking-[0.3em] text-[#f0d8b6] sm:text-xs"
+                                class="text-[10px] font-bold uppercase tracking-[0.3em] text-white/75 sm:text-xs"
                             >
                                 Admin Panel
                             </p>
@@ -230,7 +230,7 @@ const closeSidebar = () => {
                         class="hidden items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-4 py-2 shadow-inner shadow-white/5 backdrop-blur-xl sm:flex"
                     >
                         <div
-                            class="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-[#f0d8b6] via-[#d6b18a] to-[#b98b63] text-sm font-black text-[#071923]"
+                            class="grid h-10 w-10 place-items-center rounded-xl bg-white text-sm font-black text-[#071923] ring-1 ring-white/20"
                         >
                             {{ user?.name?.charAt(0) || "A" }}
                         </div>
@@ -245,7 +245,7 @@ const closeSidebar = () => {
                 </div>
 
                 <div
-                    class="h-px bg-gradient-to-r from-transparent via-[#d6b18a]/60 to-transparent"
+                    class="h-px bg-gradient-to-r from-transparent via-white/35 to-transparent"
                 />
             </header>
 
@@ -263,10 +263,10 @@ const closeSidebar = () => {
                         />
 
                         <div
-                            class="relative overflow-hidden bg-[radial-gradient(circle_at_12%_0%,rgba(11,58,86,0.10),transparent_30%),radial-gradient(circle_at_90%_10%,rgba(214,177,138,0.15),transparent_28%)] p-5"
+                            class="relative overflow-hidden bg-[radial-gradient(circle_at_12%_0%,rgba(11,58,86,0.10),transparent_30%),radial-gradient(circle_at_90%_10%,rgba(255,255,255,0.35),transparent_28%)] p-5"
                         >
                             <div
-                                class="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-[#d6b18a]/20 blur-2xl"
+                                class="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/40 blur-2xl"
                             />
 
                             <div class="relative">
@@ -294,7 +294,7 @@ const closeSidebar = () => {
                     class="flex min-h-[58px] flex-col items-center justify-center rounded-2xl px-1.5 py-2 text-[10px] font-black transition active:scale-95"
                     :class="
                         item.active
-                            ? 'bg-gradient-to-r from-[#f0d8b6] via-[#d6b18a] to-[#b98b63] text-[#071923] shadow-lg shadow-black/15'
+                            ? 'bg-white text-[#071923] shadow-lg shadow-black/15'
                             : 'text-slate-300 hover:bg-white/10 hover:text-white'
                     "
                 >
@@ -303,7 +303,7 @@ const closeSidebar = () => {
                         :class="
                             item.active
                                 ? 'bg-[#071923]/10 text-[#071923]'
-                                : 'bg-white/10 text-[#f0d8b6]'
+                                : 'bg-white/10 text-white/75'
                         "
                     >
                         {{ item.icon }}
