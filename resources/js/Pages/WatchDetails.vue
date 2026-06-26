@@ -757,19 +757,9 @@ const specs = computed(() => {
                     </div>
 
                     <div class="relative">
-                        <!-- Mobile Left Fade -->
-                        <div
-                            class="pointer-events-none absolute inset-y-2 left-0 z-20 w-5 bg-gradient-to-r from-white via-white/80 to-transparent sm:hidden"
-                        />
-
-                        <!-- Mobile Right Fade -->
-                        <div
-                            class="pointer-events-none absolute inset-y-2 right-0 z-20 w-6 bg-gradient-to-l from-white via-white/80 to-transparent sm:hidden"
-                        />
-
                         <div
                             ref="otherWatchesStrip"
-                            class="bottom-watch-strip flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-6 pr-3 pt-2 scroll-smooth sm:gap-3 sm:pb-8 sm:pr-1"
+                            class="bottom-watch-strip flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-6 pt-2 scroll-smooth sm:gap-3 sm:pb-8"
                         >
                             <Link
                                 v-for="item in compactOtherWatches"
