@@ -762,16 +762,14 @@ const specs = computed(() => {
                             class="pointer-events-none absolute inset-y-2 left-0 z-20 w-5 bg-gradient-to-r from-white via-white/80 to-transparent sm:hidden"
                         />
 
-                        <!-- Mobile Right Fade + Floating Arrow -->
+                        <!-- Mobile Right Fade -->
                         <div
-                            class="pointer-events-none absolute inset-y-2 right-0 z-20 flex w-12 items-center justify-end bg-gradient-to-l from-white via-white/90 to-transparent pr-1 sm:hidden"
-                        >
-                            <span class="mobile-floating-swipe-arrow">→</span>
-                        </div>
+                            class="pointer-events-none absolute inset-y-2 right-0 z-20 w-6 bg-gradient-to-l from-white via-white/80 to-transparent sm:hidden"
+                        />
 
                         <div
                             ref="otherWatchesStrip"
-                            class="bottom-watch-strip flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-6 pr-8 pt-2 scroll-smooth sm:gap-3 sm:pb-8 sm:pr-1"
+                            class="bottom-watch-strip flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-6 pr-3 pt-2 scroll-smooth sm:gap-3 sm:pb-8 sm:pr-1"
                         >
                             <Link
                                 v-for="item in compactOtherWatches"
@@ -856,21 +854,6 @@ const specs = computed(() => {
                                 </div>
                             </Link>
                         </div>
-                    </div>
-
-                    <!-- Mobile Swipe Indicator -->
-                    <div
-                        class="mt-1.5 flex items-center justify-center gap-2 sm:hidden"
-                    >
-                        <span
-                            class="text-[8px] font-black uppercase tracking-[0.18em] text-slate-400"
-                        >
-                            Swipe to browse
-                        </span>
-
-                        <span class="mobile-swipe-track">
-                            <span class="mobile-swipe-thumb" />
-                        </span>
                     </div>
                 </section>
             </section>
@@ -1173,40 +1156,6 @@ const specs = computed(() => {
     animation: mobileSwipeCueArrow 1.25s ease-in-out infinite;
 }
 
-.mobile-floating-swipe-arrow {
-    display: grid;
-    height: 1.55rem;
-    width: 1.55rem;
-    place-items: center;
-    border-radius: 999px;
-    background: linear-gradient(135deg, #0084ff, #0b78ff, #006aff);
-    color: white;
-    font-size: 0.78rem;
-    font-weight: 950;
-    box-shadow: 0 10px 22px rgba(0, 132, 255, 0.28);
-    animation: mobileFloatingSwipeArrow 1.35s ease-in-out infinite;
-}
-
-.mobile-swipe-track {
-    position: relative;
-    display: inline-flex;
-    height: 0.22rem;
-    width: 2.4rem;
-    overflow: hidden;
-    border-radius: 999px;
-    background: rgba(148, 163, 184, 0.22);
-}
-
-.mobile-swipe-thumb {
-    position: absolute;
-    inset-block: 0;
-    left: 0;
-    width: 42%;
-    border-radius: 999px;
-    background: linear-gradient(90deg, #0084ff, #0b78ff);
-    animation: mobileSwipeThumb 1.45s ease-in-out infinite;
-}
-
 @keyframes mobileSwipeCueArrow {
     0%,
     100% {
@@ -1217,30 +1166,6 @@ const specs = computed(() => {
     50% {
         transform: translateX(3px);
         opacity: 1;
-    }
-}
-
-@keyframes mobileFloatingSwipeArrow {
-    0%,
-    100% {
-        transform: translateX(0);
-        opacity: 0.72;
-    }
-
-    50% {
-        transform: translateX(5px);
-        opacity: 1;
-    }
-}
-
-@keyframes mobileSwipeThumb {
-    0%,
-    100% {
-        transform: translateX(0);
-    }
-
-    50% {
-        transform: translateX(1.25rem);
     }
 }
 
