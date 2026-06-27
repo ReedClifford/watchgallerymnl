@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, ref } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { Head, Link, router } from "@inertiajs/vue3";
 
 const props = defineProps({
@@ -59,20 +59,71 @@ const scrollTransactions = (direction = 1) => {
         behavior: "smooth",
     });
 };
-const normalizeGender = (value) => {
-    if (value === "mens") return "men";
-    if (value === "womens") return "women";
+const normalizeFilterValue = (value) => {
+    return String(value ?? "")
+        .trim()
+        .toLowerCase()
+        .replace(/[\s-]+/g, "_");
+};
 
-    return value || "";
+const normalizeCondition = (value) => {
+    const normalized = normalizeFilterValue(value);
+
+    if (["brandnew", "brand_new", "new"].includes(normalized)) {
+        return "brand_new";
+    }
+
+    if (["preowned", "pre_owned", "used", "second_hand"].includes(normalized)) {
+        return "pre_owned";
+    }
+
+    return normalized;
+};
+
+const normalizeGender = (value) => {
+    const normalized = normalizeFilterValue(value);
+
+    if (["mens", "male"].includes(normalized)) return "men";
+    if (["womens", "female"].includes(normalized)) return "women";
+
+    return normalized;
+};
+
+const normalizeInDemand = (value) => {
+    const normalized = normalizeFilterValue(value);
+
+    if (
+        value === true ||
+        value === 1 ||
+        ["1", "true", "yes"].includes(normalized)
+    ) {
+        return "1";
+    }
+
+    return "";
 };
 
 const search = ref(props.filters?.search ?? "");
-const activeCondition = ref(props.filters?.condition ?? "");
+const activeCondition = ref(normalizeCondition(props.filters?.condition ?? ""));
 const activeGender = ref(
     normalizeGender(props.filters?.gender ?? props.filters?.category ?? ""),
 );
-const activeInDemand = ref(props.filters?.in_demand ?? "");
+const activeInDemand = ref(normalizeInDemand(props.filters?.in_demand ?? ""));
 const activeSort = ref(props.filters?.sort ?? "newest");
+
+watch(
+    () => props.filters,
+    (filters = {}) => {
+        search.value = filters?.search ?? "";
+        activeCondition.value = normalizeCondition(filters?.condition ?? "");
+        activeGender.value = normalizeGender(
+            filters?.gender ?? filters?.category ?? "",
+        );
+        activeInDemand.value = normalizeInDemand(filters?.in_demand ?? "");
+        activeSort.value = filters?.sort ?? "newest";
+    },
+    { deep: true },
+);
 
 const shopOpened = ref(false);
 const isShopTransitioning = ref(false);
@@ -377,17 +428,28 @@ const clearSearch = () => {
 };
 
 const setConditionFilter = (value) => {
-    activeCondition.value = activeCondition.value === value ? "" : value;
+    const normalized = normalizeCondition(value);
+
+    activeCondition.value =
+        activeCondition.value === normalized ? "" : normalized;
+
     applyFilters();
 };
 
 const setGenderFilter = (value) => {
-    activeGender.value = activeGender.value === value ? "" : value;
+    const normalized = normalizeGender(value);
+
+    activeGender.value = activeGender.value === normalized ? "" : normalized;
+
     applyFilters();
 };
 
 const setInDemandFilter = (value) => {
-    activeInDemand.value = activeInDemand.value === value ? "" : value;
+    const normalized = normalizeInDemand(value);
+
+    activeInDemand.value =
+        activeInDemand.value === normalized ? "" : normalized;
+
     applyFilters();
 };
 
@@ -3443,6 +3505,30 @@ button:hover .shop-now-icon {
     cursor: not-allowed;
     opacity: 0.64;
     transform: none;
+}
+
+.collection-filter-chip-active:disabled,
+.collection-filter-chip-demand-active:disabled {
+    cursor: progress;
+    opacity: 1;
+}
+
+.collection-filter-chip-active:hover {
+    border-color: rgba(11, 58, 86, 0.28);
+    background: linear-gradient(135deg, #061725, #0b3a56, #071923);
+    color: #ffffff;
+    box-shadow:
+        0 14px 36px rgba(11, 58, 86, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.collection-filter-chip-demand-active:hover {
+    border-color: rgba(239, 68, 68, 0.34);
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    color: #ffffff;
+    box-shadow:
+        0 14px 36px rgba(220, 38, 38, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
 @keyframes filterSpin {

@@ -72,9 +72,43 @@ const basicFields = [
         label: "Condition",
         placeholder: "Brand New",
         required: false,
-        type: "text",
+        type: "select",
     },
 ];
+
+const conditionOptions = [
+    {
+        value: "Brand New",
+        label: "Brand New",
+    },
+    {
+        value: "Pre-owned",
+        label: "Pre-owned",
+    },
+];
+
+const normalizeConditionForForm = (value) => {
+    const normalized = String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[\s-]+/g, "_");
+
+    if (["brand_new", "brandnew", "new"].includes(normalized)) {
+        return "Brand New";
+    }
+
+    if (["pre_owned", "preowned", "used", "second_hand"].includes(normalized)) {
+        return "Pre-owned";
+    }
+
+    return "Brand New";
+};
+
+const conditionDisplayLabel = (value) => {
+    return conditionOptions.find(
+        (option) => option.value === normalizeConditionForForm(value),
+    )?.label;
+};
 
 const genderOptions = [
     {
@@ -408,7 +442,7 @@ const openEditModal = (watch) => {
         brand: watch.brand ?? "Seiko",
         model_name: watch.model_name ?? "",
         reference_number: watch.reference_number ?? "",
-        condition: watch.condition ?? "Brand New",
+        condition: normalizeConditionForForm(watch.condition),
         gender: watch.gender ?? "unisex",
         description: watch.description ?? "",
         movement: watch.movement ?? "",
@@ -1178,7 +1212,7 @@ const deleteWatch = async (watch) => {
                                 <span
                                     class="rounded-full bg-[#eef8fb] px-3 py-1.5 text-xs font-semibold text-[#0b3a56]"
                                 >
-                                    {{ watch.condition }}
+                                    {{ conditionDisplayLabel(watch.condition) }}
                                 </span>
 
                                 <span
@@ -1438,7 +1472,29 @@ const deleteWatch = async (watch) => {
                                                         </span>
                                                     </label>
 
+                                                    <select
+                                                        v-if="
+                                                            field.key ===
+                                                            'condition'
+                                                        "
+                                                        v-model="
+                                                            form[field.key]
+                                                        "
+                                                        class="w-full rounded-2xl border-slate-200 bg-slate-50 text-[#071923] focus:border-[#0b3a56] focus:ring-[#0b3a56]"
+                                                    >
+                                                        <option
+                                                            v-for="option in conditionOptions"
+                                                            :key="option.value"
+                                                            :value="
+                                                                option.value
+                                                            "
+                                                        >
+                                                            {{ option.label }}
+                                                        </option>
+                                                    </select>
+
                                                     <input
+                                                        v-else
                                                         v-model="
                                                             form[field.key]
                                                         "
