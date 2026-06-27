@@ -284,7 +284,64 @@ const watchPaginationLinks = computed(() => {
     return Array.isArray(props.watches?.links) ? props.watches.links : [];
 });
 
-const collageWatches = computed(() => props.heroWatches?.slice(0, 5) ?? []);
+const heroShuffleSeed = ref(Math.floor(Math.random() * 1000000));
+
+const getWatchUniqueKey = (watch, index = 0) => {
+    return String(
+        watch?.id ??
+            watch?.slug ??
+            watch?.reference_number ??
+            `${watch?.model_name || "watch"}-${index}`,
+    );
+};
+
+const uniqueWatches = (watches = []) => {
+    const seen = new Set();
+
+    return watches.filter((watch, index) => {
+        if (!watch?.image_url) return false;
+
+        const key = getWatchUniqueKey(watch, index);
+
+        if (seen.has(key)) return false;
+
+        seen.add(key);
+
+        return true;
+    });
+};
+
+const seededRandomValue = (value, seed) => {
+    let hash = seed;
+    const stringValue = String(value);
+
+    for (let index = 0; index < stringValue.length; index += 1) {
+        hash = (hash << 5) - hash + stringValue.charCodeAt(index);
+        hash |= 0;
+    }
+
+    return Math.abs(Math.sin(hash) * 10000) % 1;
+};
+
+const shuffledHeroPool = computed(() => {
+    const heroPool = uniqueWatches([
+        ...(props.heroWatches ?? []),
+        ...watchesData.value,
+    ]);
+
+    return heroPool
+        .map((watch, index) => ({
+            watch,
+            randomOrder: seededRandomValue(
+                getWatchUniqueKey(watch, index),
+                heroShuffleSeed.value,
+            ),
+        }))
+        .sort((first, second) => first.randomOrder - second.randomOrder)
+        .map((item) => item.watch);
+});
+
+const collageWatches = computed(() => shuffledHeroPool.value.slice(0, 5));
 const hasAboutUs = computed(() => Boolean(props.aboutUs));
 
 const aboutPictures = computed(() => {
@@ -299,17 +356,33 @@ const aboutPictures = computed(() => {
         })
         .map((image) => ({
             image_url: image.image_url,
-            title: image.caption || "Watch Gallery Manila Showroom",
+            title:
+                image.caption ||
+                "Suntrust Capitol Plaza, Matalino St.,Diliman, QC",
             subtitle: image.is_primary
-                ? "Featured showroom photo"
+                ? "Viewing by schedule"
                 : "Showroom photo",
             is_primary: Boolean(image.is_primary),
         }))
-        .slice(0, 12);
+        .slice(0, 6);
 });
 
 const currentAboutPicture = computed(
     () => aboutPictures.value[aboutSlideIndex.value] ?? null,
+);
+
+watch(
+    () => aboutPictures.value.length,
+    (pictureCount) => {
+        if (!pictureCount) {
+            aboutSlideIndex.value = 0;
+            return;
+        }
+
+        if (aboutSlideIndex.value > pictureCount - 1) {
+            aboutSlideIndex.value = pictureCount - 1;
+        }
+    },
 );
 
 const hasOwnerProfile = computed(() => {
@@ -1629,11 +1702,11 @@ const messengerLink = (watch = null) => {
                             />
 
                             <div
-                                class="relative grid gap-0 lg:grid-cols-[0.94fr_1.06fr]"
+                                class="relative grid gap-0 lg:grid-cols-[0.9fr_1.1fr] lg:items-start"
                             >
                                 <!-- Content Panel -->
                                 <div
-                                    class="relative z-10 flex flex-col justify-between p-5 text-white sm:p-8 lg:p-10"
+                                    class="relative z-10 flex flex-col gap-7 p-5 text-white sm:p-8 lg:p-10"
                                 >
                                     <div>
                                         <div
@@ -1736,7 +1809,7 @@ const messengerLink = (watch = null) => {
                                         </div>
                                     </div>
 
-                                    <div class="mt-8 grid gap-2 sm:grid-cols-2">
+                                    <div class="grid gap-2 sm:grid-cols-2">
                                         <a
                                             :href="messengerLink()"
                                             target="_blank"
@@ -1757,9 +1830,9 @@ const messengerLink = (watch = null) => {
                                 </div>
 
                                 <!-- Gallery Panel -->
-                                <div class="relative z-10 p-3 sm:p-5 lg:p-6">
+                                <div class="relative z-10 p-3 sm:p-5 lg:p-5">
                                     <div
-                                        class="relative min-h-[380px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/10 shadow-2xl shadow-black/20 sm:min-h-[560px] sm:rounded-[2rem]"
+                                        class="about-gallery-frame relative h-[360px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/10 shadow-2xl shadow-black/20 sm:h-[440px] sm:rounded-[2rem] lg:h-[500px] xl:h-[520px]"
                                     >
                                         <template v-if="currentAboutPicture">
                                             <Transition
@@ -1787,12 +1860,6 @@ const messengerLink = (watch = null) => {
                                             <div
                                                 class="absolute left-4 right-4 top-4 flex items-center justify-between gap-3"
                                             >
-                                                <div
-                                                    class="rounded-full border border-white/15 bg-black/25 px-3 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/75 backdrop-blur-xl"
-                                                >
-                                                    Showroom Gallery
-                                                </div>
-
                                                 <div
                                                     v-if="
                                                         aboutPictures.length > 1
@@ -1850,7 +1917,7 @@ const messengerLink = (watch = null) => {
 
                                         <div
                                             v-else
-                                            class="grid h-full min-h-[380px] place-items-center p-8 text-center text-white sm:min-h-[560px]"
+                                            class="grid h-full place-items-center p-8 text-center text-white"
                                         >
                                             <div>
                                                 <p
@@ -1877,7 +1944,7 @@ const messengerLink = (watch = null) => {
 
                                     <div
                                         v-if="aboutPictures.length > 1"
-                                        class="mt-3 flex gap-2 overflow-x-auto rounded-[1.35rem] border border-white/10 bg-white/10 p-2 backdrop-blur-xl"
+                                        class="about-thumbnail-rail mt-3 flex gap-2 overflow-x-auto rounded-[1.35rem] border border-white/10 bg-white/10 p-2 backdrop-blur-xl"
                                     >
                                         <button
                                             v-for="(
@@ -1886,7 +1953,7 @@ const messengerLink = (watch = null) => {
                                             :key="`${picture.image_url}-strip-${index}`"
                                             type="button"
                                             @click="aboutSlideIndex = index"
-                                            class="h-16 w-24 shrink-0 overflow-hidden rounded-2xl border bg-slate-100 transition sm:h-20 sm:w-32"
+                                            class="about-thumbnail-button h-14 w-20 shrink-0 overflow-hidden rounded-2xl border bg-slate-100 transition sm:h-16 sm:w-24 lg:h-16 lg:w-24"
                                             :class="
                                                 aboutSlideIndex === index
                                                     ? 'border-white ring-2 ring-white/30'
@@ -3206,6 +3273,35 @@ button:hover .shop-now-icon {
     text-transform: uppercase;
 }
 
+.about-gallery-frame {
+    min-height: 0;
+    isolation: isolate;
+}
+
+.about-thumbnail-rail {
+    max-height: 5.6rem;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.34) transparent;
+}
+
+.about-thumbnail-rail::-webkit-scrollbar {
+    height: 0.45rem;
+}
+
+.about-thumbnail-rail::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.about-thumbnail-rail::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.32);
+}
+
+.about-thumbnail-button {
+    flex: 0 0 auto;
+}
+
 .about-gallery-arrow {
     display: grid;
     height: 2.75rem;
@@ -3241,6 +3337,15 @@ button:hover .shop-now-icon {
     .about-mini-stat p:last-child {
         font-size: 0.52rem;
         letter-spacing: 0.08em;
+    }
+
+    .about-thumbnail-rail {
+        max-height: 4.95rem;
+        border-radius: 1.1rem;
+    }
+
+    .about-thumbnail-button {
+        border-radius: 0.9rem;
     }
 
     .about-gallery-arrow {
