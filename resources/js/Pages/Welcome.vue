@@ -392,10 +392,12 @@ const aboutPictures = computed(() => {
         })
         .map((image) => ({
             image_url: image.image_url,
-            title: image.caption || "Watch Gallery Manila Showroom",
+            title:
+                image.caption ||
+                "Suntrust Capitol Plaza, Matalino st., Diliman, QC",
             subtitle: image.is_primary
-                ? "Featured showroom photo"
-                : "Showroom photo",
+                ? "Viewing By Schedule"
+                : "Viewing By Schedule",
             is_primary: Boolean(image.is_primary),
         }))
         .slice(0, 6);
@@ -1681,14 +1683,8 @@ const messengerLink = (watch = null) => {
                                     <div
                                         class="absolute inset-x-0 bottom-0 z-20 p-4 sm:p-5"
                                     >
-                                        <p
-                                            class="text-[10px] font-black uppercase tracking-[0.24em] text-white/60"
-                                        >
-                                            Successful Purchase
-                                        </p>
-
                                         <h3
-                                            class="mt-1 line-clamp-2 text-xl font-black leading-tight tracking-[-0.03em] text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.45)]"
+                                            class="mt-1 line-clamp-2 text-lg font-black leading-tight tracking-[-0.03em] text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.45)]"
                                         >
                                             {{ transaction.title }}
                                         </h3>
@@ -1905,7 +1901,7 @@ const messengerLink = (watch = null) => {
                                                     v-if="
                                                         aboutPictures.length > 1
                                                     "
-                                                    class="rounded-full border border-white/15 bg-black/25 px-3 py-2 text-[10px] font-black text-white/80 backdrop-blur-xl"
+                                                    class="rounded-full border border-white/15 bg-black/25 px-3 py-2 text-[8px] font-black text-white/80 backdrop-blur-xl"
                                                 >
                                                     {{ aboutSlideIndex + 1 }} /
                                                     {{ aboutPictures.length }}
@@ -2030,15 +2026,15 @@ const messengerLink = (watch = null) => {
                         class="flex h-[54px] flex-col items-center justify-center gap-1 rounded-[1.25rem] text-[#071923] transition hover:bg-slate-50 active:scale-95"
                     >
                         <span
-                            class="grid h-7 w-7 place-items-center rounded-full bg-[#eef8fb] text-[#0b3a56]"
+                            class="grid h-9 w-9 place-items-center rounded-full bg-[#eef8fb] text-[#0084ff] shadow-sm shadow-[#0084ff]/10"
                         >
                             <svg
                                 viewBox="0 0 24 24"
                                 aria-hidden="true"
-                                class="h-[15px] w-[15px]"
+                                class="h-[22px] w-[22px]"
                                 fill="none"
                                 stroke="currentColor"
-                                stroke-width="2.2"
+                                stroke-width="2.4"
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
                             >
@@ -2074,7 +2070,7 @@ const messengerLink = (watch = null) => {
                         </span>
 
                         <span class="text-[10px] font-black leading-none">
-                            Latest
+                            Catalog
                         </span>
                     </button>
 
@@ -2085,15 +2081,15 @@ const messengerLink = (watch = null) => {
                         class="flex h-[54px] flex-col items-center justify-center gap-1 rounded-[1.25rem] text-[#071923] transition hover:bg-slate-50 active:scale-95"
                     >
                         <span
-                            class="grid h-7 w-7 place-items-center rounded-full bg-[#eef8fb] text-[#0b3a56]"
+                            class="grid h-9 w-9 place-items-center rounded-full bg-[#eef8fb] text-[#0084ff] shadow-sm shadow-[#0084ff]/10"
                         >
                             <svg
                                 viewBox="0 0 24 24"
                                 aria-hidden="true"
-                                class="h-[16px] w-[16px]"
+                                class="h-[23px] w-[23px]"
                                 fill="none"
                                 stroke="currentColor"
-                                stroke-width="2.2"
+                                stroke-width="2.4"
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
                             >
@@ -2113,7 +2109,7 @@ const messengerLink = (watch = null) => {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Inquire on Messenger"
-                        class="relative flex h-[54px] flex-col items-center justify-center gap-1 overflow-hidden rounded-[1.25rem] bg-gradient-to-br from-[#0084ff] via-[#0b78ff] to-[#0b3a56] text-white shadow-lg shadow-[#0084ff]/25 transition active:scale-95"
+                        class="relative flex h-[54px] flex-col items-center justify-center gap-1 overflow-hidden rounded-[1.25rem] bg-gradient-to-br from-[#0084ff] via-[#0b78ff] to-[#0b3a56] text-white shadow-lg shadow-[#0084ff]/25 transition hover:brightness-110 active:scale-95"
                     >
                         <span
                             class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_0%,rgba(255,255,255,0.38),transparent_34%)]"
