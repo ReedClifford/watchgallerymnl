@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Watch;
 use App\Models\WatchImage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -133,7 +135,14 @@ class WatchController extends Controller
 
         $watch = Watch::create($watchData);
 
-        $this->uploadImages($watch, $request);
+        $uploadedImages = $this->uploadImages($watch, $request);
+
+        $this->applyImageOrder(
+            $watch,
+            $uploadedImages,
+            $request->input('image_order', [])
+        );
+        $this->applyPrimaryImage($watch, $uploadedImages, $request);
         $this->normalizeImageOrder($watch);
 
         return redirect()
@@ -153,7 +162,14 @@ class WatchController extends Controller
 
         $watch->update($watchData);
 
-        $this->uploadImages($watch, $request);
+        $uploadedImages = $this->uploadImages($watch, $request);
+
+        $this->applyImageOrder(
+            $watch,
+            $uploadedImages,
+            $request->input('image_order', [])
+        );
+        $this->applyPrimaryImage($watch, $uploadedImages, $request);
         $this->normalizeImageOrder($watch);
 
         return redirect()
@@ -198,6 +214,47 @@ class WatchController extends Controller
             ->with('success', 'Watch marked as sold successfully.');
     }
 
+    public function duplicate(Watch $watch)
+    {
+        $watch->load([
+            'images' => function ($query) {
+                $query
+                    ->orderBy('sort_order')
+                    ->orderBy('id');
+            },
+        ]);
+
+        $duplicate = $watch->replicate();
+        $duplicate->model_name = trim((string) $watch->model_name) . ' (duplicate)';
+        $duplicate->status = 'available';
+        $duplicate->is_visible = true;
+        $duplicate->sold_price = null;
+        $duplicate->date_sold = null;
+        $duplicate->buyer_name = null;
+        $duplicate->save();
+
+        foreach ($watch->images as $image) {
+            $copiedPath = $this->copyWatchImagePath($image->image_path);
+
+            if (! $copiedPath) {
+                continue;
+            }
+
+            WatchImage::create([
+                'watch_id' => $duplicate->id,
+                'image_path' => $copiedPath,
+                'is_primary' => (bool) $image->is_primary,
+                'sort_order' => $image->sort_order,
+            ]);
+        }
+
+        $this->normalizeImageOrder($duplicate);
+
+        return redirect()
+            ->route('admin.watches.index')
+            ->with('success', 'Watch duplicated successfully.');
+    }
+
     private function validateWatch(Request $request): array
     {
         return $request->validate([
@@ -237,12 +294,23 @@ class WatchController extends Controller
 
             'removed_image_ids' => ['nullable', 'array'],
             'removed_image_ids.*' => ['integer'],
+
+            'image_order' => ['nullable', 'array'],
+            'image_order.*' => ['string', 'max:80'],
+            'primary_image_id' => ['nullable', 'integer'],
+            'primary_new_image_index' => ['nullable', 'integer', 'min:0'],
         ]);
     }
 
     private function prepareWatchData(array $validated): array
     {
-        unset($validated['images'], $validated['removed_image_ids']);
+        unset(
+            $validated['images'],
+            $validated['removed_image_ids'],
+            $validated['image_order'],
+            $validated['primary_image_id'],
+            $validated['primary_new_image_index']
+        );
 
         $validated['gender'] = $validated['gender'] ?? 'unisex';
 
@@ -332,25 +400,179 @@ class WatchController extends Controller
         }
     }
 
-    private function uploadImages(Watch $watch, Request $request): void
+    private function uploadImages(Watch $watch, Request $request): Collection
     {
+        $uploadedImages = collect();
+
         if (! $request->hasFile('images')) {
-            return;
+            return $uploadedImages;
         }
 
         $currentMaxSort = $watch->images()->max('sort_order') ?? 0;
-        $hasPrimary = $watch->images()->where('is_primary', true)->exists();
 
         foreach ($request->file('images') as $index => $imageFile) {
             $path = $imageFile->store('watches', 'public');
 
-            WatchImage::create([
-                'watch_id' => $watch->id,
-                'image_path' => $path,
-                'is_primary' => ! $hasPrimary && $index === 0,
-                'sort_order' => $currentMaxSort + $index + 1,
-            ]);
+            $uploadedImages->push(
+                WatchImage::create([
+                    'watch_id' => $watch->id,
+                    'image_path' => $path,
+                    'is_primary' => false,
+                    'sort_order' => $currentMaxSort + $index + 1,
+                ])
+            );
         }
+
+        return $uploadedImages;
+    }
+
+    private function applyImageOrder(Watch $watch, Collection $uploadedImages, array $imageOrder): void
+    {
+        if (empty($imageOrder)) {
+            return;
+        }
+
+        $sortOrder = 1;
+        $usedImageIds = [];
+
+        foreach ($imageOrder as $orderItem) {
+            $image = $this->resolveOrderedImage($watch, $uploadedImages, $orderItem);
+
+            if (! $image || in_array($image->id, $usedImageIds, true)) {
+                continue;
+            }
+
+            $image->update([
+                'sort_order' => $sortOrder,
+            ]);
+
+            $usedImageIds[] = $image->id;
+            $sortOrder++;
+        }
+
+        $watch->images()
+            ->whereNotIn('id', $usedImageIds)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get()
+            ->each(function (WatchImage $image) use (&$sortOrder) {
+                $image->update([
+                    'sort_order' => $sortOrder,
+                ]);
+
+                $sortOrder++;
+            });
+    }
+
+    private function resolveOrderedImage(Watch $watch, Collection $uploadedImages, mixed $orderItem): ?WatchImage
+    {
+        $orderItem = trim((string) $orderItem);
+
+        if ($orderItem === '') {
+            return null;
+        }
+
+        if (preg_match('/^new[:_-](\d+)$/', $orderItem, $matches)) {
+            return $uploadedImages->values()->get((int) $matches[1]);
+        }
+
+        if (preg_match('/^existing[:_-](\d+)$/', $orderItem, $matches)) {
+            return $watch->images()
+                ->where('id', (int) $matches[1])
+                ->first();
+        }
+
+        if (ctype_digit($orderItem)) {
+            return $watch->images()
+                ->where('id', (int) $orderItem)
+                ->first();
+        }
+
+        return null;
+    }
+
+    private function applyPrimaryImage(Watch $watch, Collection $uploadedImages, Request $request): void
+    {
+        $hasPrimaryImageId = $request->filled('primary_image_id');
+        $hasPrimaryNewImageIndex = $request->has('primary_new_image_index')
+            && $request->input('primary_new_image_index') !== null
+            && $request->input('primary_new_image_index') !== '';
+
+        if (! $hasPrimaryImageId && ! $hasPrimaryNewImageIndex) {
+            if (! $watch->images()->where('is_primary', true)->exists()) {
+                $this->setFallbackPrimaryImage($watch);
+            }
+
+            return;
+        }
+
+        $primaryImage = null;
+
+        if ($hasPrimaryImageId) {
+            $primaryImage = $watch->images()
+                ->where('id', (int) $request->input('primary_image_id'))
+                ->first();
+        }
+
+        if (! $primaryImage && $hasPrimaryNewImageIndex) {
+            $primaryImage = $uploadedImages
+                ->values()
+                ->get((int) $request->input('primary_new_image_index'));
+        }
+
+        if (! $primaryImage) {
+            $this->setFallbackPrimaryImage($watch);
+            return;
+        }
+
+        $watch->images()->update(['is_primary' => false]);
+
+        $primaryImage->update([
+            'is_primary' => true,
+        ]);
+    }
+
+    private function setFallbackPrimaryImage(Watch $watch): void
+    {
+        $watch->images()->update(['is_primary' => false]);
+
+        $watch->images()
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->first()
+            ?->update(['is_primary' => true]);
+    }
+
+    private function copyWatchImagePath(?string $path): ?string
+    {
+        if (! filled($path)) {
+            return null;
+        }
+
+        $disk = Storage::disk('public');
+
+        if (! $disk->exists($path)) {
+            return null;
+        }
+
+        $directory = pathinfo($path, PATHINFO_DIRNAME);
+        $filename = pathinfo($path, PATHINFO_FILENAME);
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+
+        $safeFilename = Str::slug($filename) ?: 'watch-photo';
+        $newFilename = $safeFilename . '-copy-' . Str::random(8);
+
+        if ($extension) {
+            $newFilename .= '.' . $extension;
+        }
+
+        $newPath = $directory && $directory !== '.'
+            ? trim($directory, '/') . '/' . $newFilename
+            : $newFilename;
+
+        $disk->copy($path, $newPath);
+
+        return $newPath;
     }
 
     private function normalizeImageOrder(Watch $watch): void

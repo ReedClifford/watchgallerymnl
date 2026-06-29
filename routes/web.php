@@ -41,6 +41,9 @@ Route::middleware(['auth'])
         Route::resource('transactions', TransactionController::class)
         ->except(['create', 'edit', 'show']);
 
+        Route::post('/watches/{watch}/duplicate', [WatchController::class, 'duplicate'])
+            ->name('watches.duplicate');
+
 
 
           Route::get('/about-us', [AboutUsController::class, 'edit'])

@@ -41,6 +41,10 @@ const inclusionText = computed(() => {
             "",
     ).trim();
 });
+
+const watchDescription = computed(() => {
+    return String(props.watch.description || "").trim();
+});
 const images = computed(() => {
     if (Array.isArray(props.watch.images) && props.watch.images.length) {
         return props.watch.images;
@@ -641,33 +645,6 @@ const specs = computed(() => {
 
                         <!-- Compact Details -->
                         <div class="p-3.5 sm:p-7 lg:flex-1">
-                            <div
-                                v-if="watch.description"
-                                class="mb-4 rounded-[1.15rem] border border-slate-200 bg-slate-50/80 p-3.5 sm:mb-6 sm:rounded-2xl sm:p-4"
-                            >
-                                <div
-                                    class="flex items-center justify-between gap-3"
-                                >
-                                    <p
-                                        class="text-[8px] font-black uppercase tracking-[0.24em] text-[#0b3a56] sm:text-[10px]"
-                                    >
-                                        Description
-                                    </p>
-
-                                    <span
-                                        class="rounded-full bg-white px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400"
-                                    >
-                                        Details
-                                    </span>
-                                </div>
-
-                                <p
-                                    class="mt-2 line-clamp-4 whitespace-pre-line text-[13px] leading-6 text-slate-600 sm:line-clamp-none sm:text-base sm:leading-7"
-                                >
-                                    {{ watch.description }}
-                                </p>
-                            </div>
-
                             <div>
                                 <div
                                     class="flex items-center justify-between gap-3"
@@ -698,6 +675,42 @@ const specs = computed(() => {
                         </div>
                     </div>
                 </div>
+
+                <!-- Watch Description from watches.description -->
+                <section
+                    v-if="watchDescription"
+                    class="mt-4 overflow-hidden rounded-[1.15rem] border border-slate-200/80 bg-white/95 p-4 shadow-md shadow-[#0b3a56]/5 backdrop-blur-xl sm:mt-8 sm:rounded-[1.35rem] sm:p-6"
+                >
+                    <div
+                        class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"
+                    >
+                        <div>
+                            <p
+                                class="text-[8px] font-black uppercase tracking-[0.24em] text-[#0b3a56]/70 sm:text-[10px]"
+                            >
+                                Description
+                            </p>
+
+                            <h2
+                                class="mt-1 text-lg font-black tracking-[-0.04em] text-[#071923] sm:text-2xl"
+                            >
+                                About this watch
+                            </h2>
+                        </div>
+
+                        <span
+                            class="inline-flex w-fit rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400"
+                        >
+                            watches.description
+                        </span>
+                    </div>
+
+                    <p
+                        class="mt-3 whitespace-pre-line text-sm font-medium leading-7 text-slate-600 sm:text-base sm:leading-8"
+                    >
+                        {{ watchDescription }}
+                    </p>
+                </section>
 
                 <!-- Premium Bottom Watch Cards -->
                 <section

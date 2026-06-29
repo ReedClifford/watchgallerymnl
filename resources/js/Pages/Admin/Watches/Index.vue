@@ -36,6 +36,9 @@ const editingWatch = ref(null);
 const imagePreviews = ref([]);
 const activeModalTab = ref("details");
 const search = ref(props.filters?.search ?? "");
+const galleryOrder = ref([]);
+const primaryImageToken = ref("");
+const uploadedImageKeyCounter = ref(0);
 
 const tabOrder = ["details", "pricing", "photos"];
 
@@ -250,6 +253,9 @@ const defaultForm = () => ({
     buyer_name: "",
     images: [],
     removed_image_ids: [],
+    image_order: [],
+    primary_image_id: "",
+    primary_new_image_index: "",
 });
 
 const form = useForm(defaultForm());
@@ -352,6 +358,50 @@ const totalSelectedImages = computed(() => {
     return existingImageCount.value + newImageCount.value;
 });
 
+const existingImageToken = (image) => `existing-${image.id}`;
+
+const newImageToken = (preview) =>
+    preview?.key || preview?.url || preview?.name;
+
+const galleryItems = computed(() => {
+    const existingItems = visibleExistingImages.value.map((image) => ({
+        type: "existing",
+        token: existingImageToken(image),
+        id: image.id,
+        url: image.image_url,
+        name: `Existing photo ${image.id}`,
+        isOriginalPrimary: Boolean(image.is_primary),
+    }));
+
+    const newItems = imagePreviews.value.map((preview, index) => ({
+        type: "new",
+        token: newImageToken(preview),
+        key: preview.key,
+        file: preview.file,
+        url: preview.url,
+        name: preview.name || `New upload ${index + 1}`,
+        newIndex: index,
+        isOriginalPrimary: false,
+    }));
+
+    const allItems = [...existingItems, ...newItems];
+    const byToken = new Map(allItems.map((item) => [item.token, item]));
+    const orderedItems = galleryOrder.value
+        .map((token) => byToken.get(token))
+        .filter(Boolean);
+    const orderedTokens = new Set(orderedItems.map((item) => item.token));
+
+    allItems.forEach((item) => {
+        if (!orderedTokens.has(item.token)) {
+            orderedItems.push(item);
+        }
+    });
+
+    return orderedItems;
+});
+
+const hasGalleryItems = computed(() => galleryItems.value.length > 0);
+
 const hasUnsavedChanges = computed(() => {
     return form.isDirty || imagePreviews.value.length > 0;
 });
@@ -418,6 +468,9 @@ const clearImagePreviews = () => {
 const resetModalState = () => {
     editingWatch.value = null;
     clearImagePreviews();
+    galleryOrder.value = [];
+    primaryImageToken.value = "";
+    uploadedImageKeyCounter.value = 0;
     activeModalTab.value = "details";
 
     form.defaults(defaultForm());
@@ -468,9 +521,25 @@ const openEditModal = (watch) => {
         buyer_name: watch.buyer_name ?? "",
         images: [],
         removed_image_ids: [],
+        image_order: [],
+        primary_image_id: "",
+        primary_new_image_index: "",
     });
 
     form.reset();
+    galleryOrder.value = (watch.images || []).map((image) =>
+        existingImageToken(image),
+    );
+
+    const savedPrimaryImage = (watch.images || []).find(
+        (image) => image.is_primary,
+    );
+
+    primaryImageToken.value = savedPrimaryImage
+        ? existingImageToken(savedPrimaryImage)
+        : galleryOrder.value[0] || "";
+
+    syncGalleryFormState();
     form.clearErrors();
     showModal.value = true;
 };
@@ -502,10 +571,129 @@ const requestCloseModal = async () => {
     }
 };
 
-const syncSelectedImages = () => {
-    form.images = imagePreviews.value
-        .map((previewItem) => previewItem.file)
-        .filter(Boolean);
+const normalizeGalleryOrder = () => {
+    const validTokens = [
+        ...visibleExistingImages.value.map((image) =>
+            existingImageToken(image),
+        ),
+        ...imagePreviews.value.map((preview) => newImageToken(preview)),
+    ].filter(Boolean);
+
+    const validTokenSet = new Set(validTokens);
+    const normalizedOrder = galleryOrder.value.filter((token) =>
+        validTokenSet.has(token),
+    );
+
+    validTokens.forEach((token) => {
+        if (!normalizedOrder.includes(token)) {
+            normalizedOrder.push(token);
+        }
+    });
+
+    galleryOrder.value = normalizedOrder;
+
+    if (
+        !primaryImageToken.value ||
+        !validTokenSet.has(primaryImageToken.value)
+    ) {
+        primaryImageToken.value = normalizedOrder[0] || "";
+    }
+};
+
+const syncGalleryFormState = () => {
+    normalizeGalleryOrder();
+
+    const orderedItems = galleryItems.value;
+    const orderedNewItems = orderedItems.filter((item) => item.type === "new");
+
+    form.images = orderedNewItems.map((item) => item.file).filter(Boolean);
+
+    form.image_order = orderedItems.map((item) => {
+        if (item.type === "existing") {
+            return `existing:${item.id}`;
+        }
+
+        const newIndex = orderedNewItems.findIndex(
+            (newItem) => newItem.token === item.token,
+        );
+
+        return `new:${newIndex}`;
+    });
+
+    const primaryItem =
+        orderedItems.find((item) => item.token === primaryImageToken.value) ||
+        orderedItems[0] ||
+        null;
+
+    if (!primaryItem) {
+        form.primary_image_id = "";
+        form.primary_new_image_index = "";
+        primaryImageToken.value = "";
+        return;
+    }
+
+    primaryImageToken.value = primaryItem.token;
+
+    if (primaryItem.type === "existing") {
+        form.primary_image_id = primaryItem.id;
+        form.primary_new_image_index = "";
+        return;
+    }
+
+    form.primary_image_id = "";
+    form.primary_new_image_index = orderedNewItems.findIndex(
+        (item) => item.token === primaryItem.token,
+    );
+};
+
+const setPrimaryImage = (token) => {
+    primaryImageToken.value = token;
+    syncGalleryFormState();
+};
+
+const moveGalleryItem = (token, direction) => {
+    normalizeGalleryOrder();
+
+    const currentIndex = galleryOrder.value.indexOf(token);
+    const targetIndex = currentIndex + direction;
+
+    if (
+        currentIndex === -1 ||
+        targetIndex < 0 ||
+        targetIndex >= galleryOrder.value.length
+    ) {
+        return;
+    }
+
+    const updatedOrder = [...galleryOrder.value];
+    [updatedOrder[currentIndex], updatedOrder[targetIndex]] = [
+        updatedOrder[targetIndex],
+        updatedOrder[currentIndex],
+    ];
+
+    galleryOrder.value = updatedOrder;
+    syncGalleryFormState();
+};
+
+const moveGalleryItemToStart = (token) => {
+    normalizeGalleryOrder();
+
+    galleryOrder.value = [
+        token,
+        ...galleryOrder.value.filter((itemToken) => itemToken !== token),
+    ];
+
+    syncGalleryFormState();
+};
+
+const removeGalleryToken = (token) => {
+    galleryOrder.value = galleryOrder.value.filter(
+        (itemToken) => itemToken !== token,
+    );
+
+    if (primaryImageToken.value === token) {
+        primaryImageToken.value = "";
+    }
 };
 
 const handleImages = (event) => {
@@ -535,29 +723,54 @@ const handleImages = (event) => {
         return;
     }
 
-    imagePreviews.value = [
-        ...imagePreviews.value,
-        ...files.map((file) => ({
+    const newPreviews = files.map((file) => {
+        uploadedImageKeyCounter.value += 1;
+
+        return {
+            key: `new-${Date.now()}-${uploadedImageKeyCounter.value}`,
             file,
             name: file.name,
             size: file.size,
             url: URL.createObjectURL(file),
-        })),
+        };
+    });
+
+    imagePreviews.value = [...imagePreviews.value, ...newPreviews];
+    galleryOrder.value = [
+        ...galleryOrder.value,
+        ...newPreviews.map((preview) => newImageToken(preview)),
     ];
 
-    syncSelectedImages();
+    if (!primaryImageToken.value && newPreviews.length) {
+        primaryImageToken.value = newImageToken(newPreviews[0]);
+    }
+
+    syncGalleryFormState();
     event.target.value = "";
 };
 
-const removeSelectedImage = (index) => {
+const removeSelectedImage = (previewOrIndex) => {
+    const index =
+        typeof previewOrIndex === "number"
+            ? previewOrIndex
+            : imagePreviews.value.findIndex(
+                  (preview) =>
+                      newImageToken(preview) === previewOrIndex?.token ||
+                      newImageToken(preview) === newImageToken(previewOrIndex),
+              );
+
+    if (index < 0) return;
+
     const preview = imagePreviews.value[index];
+    const token = newImageToken(preview);
 
     if (preview?.url) {
         URL.revokeObjectURL(preview.url);
     }
 
     imagePreviews.value.splice(index, 1);
-    syncSelectedImages();
+    removeGalleryToken(token);
+    syncGalleryFormState();
 };
 
 const removeExistingImage = async (image) => {
@@ -578,6 +791,9 @@ const removeExistingImage = async (image) => {
     form.removed_image_ids = [
         ...new Set([...(form.removed_image_ids || []), image.id]),
     ];
+
+    removeGalleryToken(existingImageToken(image));
+    syncGalleryFormState();
 
     toast.fire({
         icon: "success",
@@ -706,6 +922,8 @@ const goToErrorTab = (errors) => {
 };
 
 const submitForm = () => {
+    syncGalleryFormState();
+
     const options = {
         forceFormData: true,
         preserveScroll: true,
@@ -804,6 +1022,50 @@ const markAsSold = async (watch) => {
             });
         },
     });
+};
+
+const duplicateWatch = async (watch) => {
+    const result = await Swal.fire({
+        title: "Duplicate this watch?",
+        html: `
+            <div style="text-align:center">
+                <strong>${watch.brand || ""} ${watch.model_name || ""}</strong>
+                <br>
+                <span style="font-size:13px;color:#64748b">This will create a new available listing with the same details, photos, primary image, and photo order.</span>
+            </div>
+        `,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Duplicate Watch",
+        cancelButtonText: "Cancel",
+        reverseButtons: true,
+        ...swalTheme,
+    });
+
+    if (!result.isConfirmed) return;
+
+    router.post(
+        route("admin.watches.duplicate", watch.id),
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.fire({
+                    icon: "success",
+                    title: "Watch duplicated",
+                });
+            },
+            onError: () => {
+                Swal.fire({
+                    title: "Duplicate failed",
+                    text: "Something went wrong while duplicating this watch.",
+                    icon: "error",
+                    confirmButtonText: "Okay",
+                    ...swalTheme,
+                });
+            },
+        },
+    );
 };
 
 const deleteWatch = async (watch) => {
@@ -1247,13 +1509,23 @@ const deleteWatch = async (watch) => {
                                     Mark as Sold
                                 </button>
 
-                                <div class="grid grid-cols-2 gap-2">
+                                <div
+                                    class="grid grid-cols-2 gap-2 sm:grid-cols-3"
+                                >
                                     <button
                                         type="button"
                                         @click="openEditModal(watch)"
                                         class="rounded-2xl border border-[#0b3a56]/20 bg-[#eef8fb] px-4 py-3 text-sm font-black text-[#0b3a56] transition hover:border-[#0b3a56]/40 hover:bg-[#dff3f8] active:scale-95"
                                     >
                                         Edit
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        @click="duplicateWatch(watch)"
+                                        class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-600 transition hover:border-[#0b3a56]/30 hover:bg-[#eef8fb] hover:text-[#0b3a56] active:scale-95"
+                                    >
+                                        Duplicate
                                     </button>
 
                                     <button
@@ -1981,92 +2253,200 @@ const deleteWatch = async (watch) => {
                                         </section>
 
                                         <section
-                                            v-if="
-                                                modalMode === 'edit' &&
-                                                visibleExistingImages.length
-                                            "
+                                            v-if="hasGalleryItems"
                                             class="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-xl shadow-[#0b3a56]/10 sm:p-5"
                                         >
-                                            <p
-                                                class="mb-3 text-xs font-black uppercase tracking-[0.2em] text-slate-400"
-                                            >
-                                                Existing Photos
-                                            </p>
-
                                             <div
-                                                class="grid grid-cols-3 gap-2 sm:grid-cols-5"
+                                                class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                                             >
+                                                <div>
+                                                    <p
+                                                        class="text-xs font-black uppercase tracking-[0.2em] text-slate-400"
+                                                    >
+                                                        Photo Arrangement
+                                                    </p>
+
+                                                    <p
+                                                        class="mt-1 text-sm text-slate-500"
+                                                    >
+                                                        Choose the primary photo
+                                                        and arrange the order
+                                                        shown on the website.
+                                                    </p>
+                                                </div>
+
                                                 <div
-                                                    v-for="image in visibleExistingImages"
-                                                    :key="image.id"
-                                                    class="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"
+                                                    class="rounded-2xl bg-slate-50 px-4 py-2 text-xs font-black text-slate-500"
                                                 >
-                                                    <img
-                                                        :src="image.image_url"
-                                                        class="aspect-square w-full object-cover"
-                                                    />
-
-                                                    <button
-                                                        type="button"
-                                                        @click="
-                                                            removeExistingImage(
-                                                                image,
-                                                            )
-                                                        "
-                                                        class="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-white/90 text-sm font-black text-rose-600 shadow-lg shadow-black/10 backdrop-blur transition hover:bg-rose-600 hover:text-white"
-                                                    >
-                                                        ×
-                                                    </button>
-
-                                                    <span
-                                                        v-if="image.is_primary"
-                                                        class="absolute bottom-1 left-1 right-1 rounded-lg bg-white px-2 py-1 text-center text-[10px] font-black text-[#071923]"
-                                                    >
-                                                        Primary
-                                                    </span>
+                                                    First photo appears first
                                                 </div>
                                             </div>
-                                        </section>
-
-                                        <section
-                                            v-if="imagePreviews.length"
-                                            class="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-xl shadow-[#0b3a56]/10 sm:p-5"
-                                        >
-                                            <p
-                                                class="mb-3 text-xs font-black uppercase tracking-[0.2em] text-slate-400"
-                                            >
-                                                New Uploads
-                                            </p>
 
                                             <div
-                                                class="grid grid-cols-3 gap-2 sm:grid-cols-5"
+                                                class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"
                                             >
-                                                <div
+                                                <article
                                                     v-for="(
-                                                        preview, index
-                                                    ) in imagePreviews"
-                                                    :key="preview.url"
-                                                    class="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"
+                                                        item, index
+                                                    ) in galleryItems"
+                                                    :key="item.token"
+                                                    class="overflow-hidden rounded-2xl border bg-slate-50 shadow-sm transition"
+                                                    :class="
+                                                        primaryImageToken ===
+                                                        item.token
+                                                            ? 'border-[#0b3a56] ring-2 ring-[#0b3a56]/15'
+                                                            : 'border-slate-200'
+                                                    "
                                                 >
-                                                    <img
-                                                        :src="preview.url"
-                                                        :alt="preview.name"
-                                                        class="aspect-square w-full object-cover"
-                                                    />
-
-                                                    <button
-                                                        type="button"
-                                                        @click="
-                                                            removeSelectedImage(
-                                                                index,
-                                                            )
-                                                        "
-                                                        class="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-white/90 text-sm font-black text-rose-600 shadow-lg shadow-black/10 backdrop-blur transition hover:bg-rose-600 hover:text-white"
+                                                    <div
+                                                        class="relative aspect-square overflow-hidden bg-slate-100"
                                                     >
-                                                        ×
-                                                    </button>
-                                                </div>
+                                                        <img
+                                                            :src="item.url"
+                                                            :alt="item.name"
+                                                            class="h-full w-full object-cover"
+                                                        />
+
+                                                        <div
+                                                            class="absolute left-2 top-2 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-black text-[#071923] shadow-lg shadow-black/10"
+                                                        >
+                                                            #{{ index + 1 }}
+                                                        </div>
+
+                                                        <button
+                                                            type="button"
+                                                            @click="
+                                                                item.type ===
+                                                                'existing'
+                                                                    ? removeExistingImage(
+                                                                          item,
+                                                                      )
+                                                                    : removeSelectedImage(
+                                                                          item,
+                                                                      )
+                                                            "
+                                                            class="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-white/95 text-sm font-black text-rose-600 shadow-lg shadow-black/10 transition hover:bg-rose-600 hover:text-white"
+                                                            aria-label="Remove photo"
+                                                        >
+                                                            ×
+                                                        </button>
+
+                                                        <div
+                                                            class="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1"
+                                                        >
+                                                            <span
+                                                                class="rounded-full bg-black/55 px-2 py-1 text-[9px] font-black uppercase tracking-wide text-white backdrop-blur"
+                                                            >
+                                                                {{
+                                                                    item.type ===
+                                                                    "existing"
+                                                                        ? "Saved"
+                                                                        : "New"
+                                                                }}
+                                                            </span>
+
+                                                            <span
+                                                                v-if="
+                                                                    primaryImageToken ===
+                                                                    item.token
+                                                                "
+                                                                class="rounded-full bg-white px-2 py-1 text-[9px] font-black uppercase tracking-wide text-[#071923]"
+                                                            >
+                                                                Primary
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="space-y-2 p-2">
+                                                        <button
+                                                            type="button"
+                                                            @click="
+                                                                setPrimaryImage(
+                                                                    item.token,
+                                                                )
+                                                            "
+                                                            class="w-full rounded-xl px-3 py-2 text-[11px] font-black transition active:scale-95"
+                                                            :class="
+                                                                primaryImageToken ===
+                                                                item.token
+                                                                    ? 'bg-[#071923] text-white'
+                                                                    : 'border border-[#0b3a56]/15 bg-[#eef8fb] text-[#0b3a56] hover:border-[#0b3a56]/30'
+                                                            "
+                                                        >
+                                                            {{
+                                                                primaryImageToken ===
+                                                                item.token
+                                                                    ? "Primary"
+                                                                    : "Set Primary"
+                                                            }}
+                                                        </button>
+
+                                                        <div
+                                                            class="grid grid-cols-3 gap-1"
+                                                        >
+                                                            <button
+                                                                type="button"
+                                                                :disabled="
+                                                                    index === 0
+                                                                "
+                                                                @click="
+                                                                    moveGalleryItem(
+                                                                        item.token,
+                                                                        -1,
+                                                                    )
+                                                                "
+                                                                class="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-black text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35"
+                                                                aria-label="Move photo left"
+                                                            >
+                                                                ↑
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                :disabled="
+                                                                    index === 0
+                                                                "
+                                                                @click="
+                                                                    moveGalleryItemToStart(
+                                                                        item.token,
+                                                                    )
+                                                                "
+                                                                class="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[10px] font-black text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35"
+                                                            >
+                                                                First
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                :disabled="
+                                                                    index ===
+                                                                    galleryItems.length -
+                                                                        1
+                                                                "
+                                                                @click="
+                                                                    moveGalleryItem(
+                                                                        item.token,
+                                                                        1,
+                                                                    )
+                                                                "
+                                                                class="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-black text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35"
+                                                                aria-label="Move photo right"
+                                                            >
+                                                                ↓
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </article>
                                             </div>
+
+                                            <p
+                                                class="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-xs font-semibold leading-relaxed text-slate-500"
+                                            >
+                                                Tip: The photo marked as Primary
+                                                will be used as the main card
+                                                image. Arrangement controls the
+                                                image order on the detail page.
+                                            </p>
                                         </section>
                                     </div>
                                 </div>

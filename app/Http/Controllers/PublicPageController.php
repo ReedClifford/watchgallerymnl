@@ -25,6 +25,22 @@ class PublicPageController extends Controller
 
         $inDemand = trim((string) $request->input('in_demand', ''));
 
+        /*
+        |--------------------------------------------------------------------------
+        | Collection Sort / Random Seed
+        |--------------------------------------------------------------------------
+        | Default collection order is randomized per fresh page reload.
+        | The generated seed is appended to pagination links, so page 2 / page 3
+        | keeps the same randomized sequence instead of reshuffling.
+        */
+        $sort = $this->normalizeSortFilter($request->input('sort', 'random'));
+
+        $randomSeed = (int) $request->input('random_seed');
+
+        if ($randomSeed <= 0) {
+            $randomSeed = random_int(1, 999999999);
+        }
+
         $hasGenderColumn = Schema::hasColumn('watches', 'gender');
         $hasCategoryColumn = Schema::hasColumn('watches', 'category');
         $hasInDemandColumn = Schema::hasColumn('watches', 'is_in_demand');
@@ -78,7 +94,7 @@ class PublicPageController extends Controller
             ->map(fn ($watch) => $this->watchCard($watch))
             ->values();
 
-        $watches = Watch::query()
+        $watchesQuery = Watch::query()
             ->with('primaryImage')
             ->where('status', 'available')
             ->where('is_visible', true)
@@ -126,10 +142,24 @@ class PublicPageController extends Controller
                 function ($query) use ($categoryMap, $gender) {
                     $query->whereIn('category', $categoryMap[$gender]);
                 }
-            )
-            ->latest('id')
+            );
+
+        $this->applyCollectionSort($watchesQuery, $sort, $randomSeed, $hasInDemandColumn);
+
+        $queryString = collect([
+            'search' => $search !== '' ? $search : null,
+            'condition' => $condition !== '' ? $condition : null,
+            'gender' => $gender !== '' ? $gender : null,
+            'in_demand' => $inDemand !== '' ? $inDemand : null,
+            'sort' => $sort,
+            'random_seed' => $sort === 'random' ? $randomSeed : null,
+        ])
+            ->filter(fn ($value) => filled($value))
+            ->all();
+
+        $watches = $watchesQuery
             ->paginate(12)
-            ->withQueryString()
+            ->appends($queryString)
             ->through(fn ($watch) => $this->watchCard($watch));
 
         return Inertia::render('Welcome', [
@@ -137,11 +167,17 @@ class PublicPageController extends Controller
             'watches' => $watches,
             'transactions' => $this->visibleTransactions(),
             'aboutUs' => $this->aboutUsContent(),
+            'availableCount' => Watch::query()
+                ->where('status', 'available')
+                ->where('is_visible', true)
+                ->count(),
             'filters' => [
                 'search' => $search,
                 'condition' => $condition,
                 'gender' => $gender,
                 'in_demand' => $inDemand,
+                'sort' => $sort,
+                'random_seed' => $sort === 'random' ? $randomSeed : null,
 
                 // Legacy fallback so old Vue state/URLs do not break.
                 'category' => $gender,
@@ -327,10 +363,6 @@ class PublicPageController extends Controller
         if (method_exists(AboutUsContent::class, 'images')) {
             $query->with([
                 'images' => function ($imageQuery) {
-                    if (Schema::hasColumn('about_us_images', 'is_primary')) {
-                        $imageQuery->orderByDesc('is_primary');
-                    }
-
                     if (Schema::hasColumn('about_us_images', 'sort_order')) {
                         $imageQuery->orderBy('sort_order');
                     }
@@ -364,7 +396,6 @@ class PublicPageController extends Controller
             'images' => $aboutUs->images
                 ? $aboutUs->images
                     ->sortBy([
-                        ['is_primary', 'desc'],
                         ['sort_order', 'asc'],
                         ['id', 'asc'],
                     ])
@@ -384,6 +415,66 @@ class PublicPageController extends Controller
                 : [],
         ];
     }
+
+
+    private function normalizeSortFilter($value): string
+    {
+        $value = strtolower(trim((string) $value));
+
+        return match ($value) {
+            'newest', 'latest' => 'newest',
+            'price_low', 'price-low', 'low_to_high', 'low-to-high' => 'price_low',
+            'price_high', 'price-high', 'high_to_low', 'high-to-low' => 'price_high',
+            'in_demand', 'indemand', 'demand' => 'in_demand',
+            default => 'random',
+        };
+    }
+
+    private function applyCollectionSort($query, string $sort, int $randomSeed, bool $hasInDemandColumn): void
+    {
+        if ($sort === 'price_low') {
+            $query
+                ->orderByRaw('COALESCE(discounted_price, selling_price, 999999999) ASC')
+                ->orderBy('id');
+
+            return;
+        }
+
+        if ($sort === 'price_high') {
+            $query
+                ->orderByRaw('COALESCE(discounted_price, selling_price, 0) DESC')
+                ->orderByDesc('id');
+
+            return;
+        }
+
+        if ($sort === 'in_demand') {
+            if ($hasInDemandColumn) {
+                $query->orderByDesc('is_in_demand');
+            }
+
+            $query->latest('id');
+
+            return;
+        }
+
+        if ($sort === 'newest') {
+            $query->latest('id');
+
+            return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Stable Random Order
+        |--------------------------------------------------------------------------
+        | RAND(seed) creates a randomized order that is stable while the same
+        | seed is used. We append this seed to pagination links, so page 2/3
+        | will not reshuffle until the user refreshes/reopens without a seed.
+        */
+        $query->orderByRaw('RAND(' . (int) $randomSeed . ')');
+    }
+
 
     private function normalizeGenderFilter($value): string
     {

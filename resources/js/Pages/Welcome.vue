@@ -26,7 +26,7 @@ const props = defineProps({
             condition: "",
             gender: "",
             in_demand: "",
-            sort: "newest",
+            sort: "random",
             category: "", // legacy fallback for old URLs/controllers
         }),
     },
@@ -109,7 +109,7 @@ const activeGender = ref(
     normalizeGender(props.filters?.gender ?? props.filters?.category ?? ""),
 );
 const activeInDemand = ref(normalizeInDemand(props.filters?.in_demand ?? ""));
-const activeSort = ref(props.filters?.sort ?? "newest");
+const activeSort = ref(props.filters?.sort ?? "random");
 
 watch(
     () => props.filters,
@@ -120,7 +120,7 @@ watch(
             filters?.gender ?? filters?.category ?? "",
         );
         activeInDemand.value = normalizeInDemand(filters?.in_demand ?? "");
-        activeSort.value = filters?.sort ?? "newest";
+        activeSort.value = filters?.sort ?? "random";
     },
     { deep: true },
 );
@@ -158,6 +158,10 @@ const genderFilters = [
 
 const sortFilters = [
     {
+        label: "Random",
+        value: "random",
+    },
+    {
         label: "Newest",
         value: "newest",
     },
@@ -181,7 +185,7 @@ const hasActiveCollectionFilters = computed(() => {
         activeCondition.value ||
         activeGender.value ||
         activeInDemand.value ||
-        activeSort.value !== "newest",
+        activeSort.value !== "random",
     );
 });
 
@@ -221,7 +225,7 @@ const activeCollectionFilterPills = computed(() => {
         });
     }
 
-    if (activeSort.value !== "newest") {
+    if (activeSort.value !== "random") {
         pills.push({
             type: "sort",
             label:
@@ -245,8 +249,44 @@ const watchesData = computed(() => {
     return [];
 });
 
+const collectionShuffleSeed = ref(Math.floor(Math.random() * 1000000));
+
+const getCollectionWatchKey = (watch, index = 0) => {
+    return String(
+        watch?.id ??
+            watch?.slug ??
+            watch?.reference_number ??
+            `${watch?.model_name || "watch"}-${index}`,
+    );
+};
+
+const seededCollectionRandomValue = (value, seed) => {
+    let hash = seed;
+    const stringValue = String(value);
+
+    for (let index = 0; index < stringValue.length; index += 1) {
+        hash = (hash << 5) - hash + stringValue.charCodeAt(index);
+        hash |= 0;
+    }
+
+    return Math.abs(Math.sin(hash) * 10000) % 1;
+};
+
 const browsableWatches = computed(() => {
     const data = [...watchesData.value];
+
+    if (activeSort.value === "random") {
+        return data
+            .map((watch, index) => ({
+                watch,
+                randomOrder: seededCollectionRandomValue(
+                    getCollectionWatchKey(watch, index),
+                    collectionShuffleSeed.value,
+                ),
+            }))
+            .sort((first, second) => first.randomOrder - second.randomOrder)
+            .map((item) => item.watch);
+    }
 
     if (activeSort.value === "price_low") {
         return data.sort((a, b) => {
@@ -356,11 +396,9 @@ const aboutPictures = computed(() => {
         })
         .map((image) => ({
             image_url: image.image_url,
-            title:
-                image.caption ||
-                "Suntrust Capitol Plaza, Matalino St.,Diliman, QC",
+            title: image.caption || "Watch Gallery Manila Showroom",
             subtitle: image.is_primary
-                ? "Viewing by schedule"
+                ? "Featured showroom photo"
                 : "Showroom photo",
             is_primary: Boolean(image.is_primary),
         }))
@@ -466,7 +504,7 @@ const filterPayload = () => {
         condition: activeCondition.value || undefined,
         gender: activeGender.value || undefined,
         in_demand: activeInDemand.value || undefined,
-        sort: activeSort.value || "newest",
+        sort: activeSort.value || "random",
     };
 };
 
@@ -531,7 +569,7 @@ const clearCollectionFilters = () => {
     activeCondition.value = "";
     activeGender.value = "";
     activeInDemand.value = "";
-    activeSort.value = "newest";
+    activeSort.value = "random";
     applyFilters();
 };
 
@@ -553,7 +591,7 @@ const clearFilterPill = (type) => {
     }
 
     if (type === "sort") {
-        activeSort.value = "newest";
+        activeSort.value = "random";
     }
 
     applyFilters();
@@ -1087,7 +1125,10 @@ const messengerLink = (watch = null) => {
                                     <h2
                                         class="mt-2 text-2xl font-black tracking-tight text-[#071923] sm:text-3xl"
                                     >
-                                        Available Timepieces
+                                        {{ availableCount }} Available
+                                        Timepiece{{
+                                            availableCount === 1 ? "" : "s"
+                                        }}
                                     </h2>
 
                                     <p class="mt-2 text-sm text-slate-500">
@@ -1860,6 +1901,12 @@ const messengerLink = (watch = null) => {
                                             <div
                                                 class="absolute left-4 right-4 top-4 flex items-center justify-between gap-3"
                                             >
+                                                <div
+                                                    class="rounded-full border border-white/15 bg-black/25 px-3 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/75 backdrop-blur-xl"
+                                                >
+                                                    Showroom Gallery
+                                                </div>
+
                                                 <div
                                                     v-if="
                                                         aboutPictures.length > 1
