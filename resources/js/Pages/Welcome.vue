@@ -158,10 +158,6 @@ const genderFilters = [
 
 const sortFilters = [
     {
-        label: "Random",
-        value: "random",
-    },
-    {
         label: "Newest",
         value: "newest",
     },
@@ -1154,6 +1150,10 @@ const messengerLink = (watch = null) => {
                                         class="w-full rounded-2xl border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-[#071923] focus:border-[#0b3a56] focus:ring-[#0b3a56] disabled:cursor-not-allowed disabled:opacity-70"
                                         @change="applyFilters"
                                     >
+                                        <option value="random" hidden>
+                                            Sort by
+                                        </option>
+
                                         <option
                                             v-for="filter in sortFilters"
                                             :key="filter.value"
