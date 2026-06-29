@@ -1902,12 +1902,6 @@ const messengerLink = (watch = null) => {
                                                 class="absolute left-4 right-4 top-4 flex items-center justify-between gap-3"
                                             >
                                                 <div
-                                                    class="rounded-full border border-white/15 bg-black/25 px-3 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/75 backdrop-blur-xl"
-                                                >
-                                                    Showroom Gallery
-                                                </div>
-
-                                                <div
                                                     v-if="
                                                         aboutPictures.length > 1
                                                     "
@@ -1967,12 +1961,6 @@ const messengerLink = (watch = null) => {
                                             class="grid h-full place-items-center p-8 text-center text-white"
                                         >
                                             <div>
-                                                <p
-                                                    class="text-[10px] font-black uppercase tracking-[0.35em] text-white/55"
-                                                >
-                                                    Showroom Gallery
-                                                </p>
-
                                                 <p
                                                     class="mt-3 text-3xl font-black sm:text-4xl"
                                                 >
