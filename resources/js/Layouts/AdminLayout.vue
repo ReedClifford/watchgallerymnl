@@ -13,30 +13,41 @@ const navItems = [
         shortLabel: "Home",
         href: route("dashboard"),
         active: route().current("dashboard"),
-        icon: "⌂",
+        icon: "home",
     },
     {
         label: "Watch Inventory",
         shortLabel: "Inventory",
         href: route("admin.watches.index"),
         active: route().current("admin.watches.*"),
-        icon: "◉",
+        icon: "inventory",
     },
     {
         label: "Transactions",
         shortLabel: "Sales",
         href: route("admin.transactions.index"),
         active: route().current("admin.transactions.*"),
-        icon: "◆",
+        icon: "sales",
     },
     {
         label: "About Us",
         shortLabel: "About",
         href: route("admin.about-us.edit"),
         active: route().current("admin.about-us.*"),
-        icon: "✦",
+        icon: "about",
     },
 ];
+
+const iconPaths = {
+    home: ["M3 10.5 12 3l9 7.5", "M5 10v10h14V10", "M9 20v-6h6v6"],
+    inventory: ["M4 7l8-4 8 4-8 4-8-4Z", "M4 12l8 4 8-4", "M4 17l8 4 8-4"],
+    sales: ["M4 19V5", "M8 17v-6", "M12 17V8", "M16 17v-4", "M20 17V6"],
+    about: [
+        "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z",
+        "M12 16v-4",
+        "M12 8h.01",
+    ],
+};
 
 const closeSidebar = () => {
     sidebarOpen.value = false;
@@ -128,14 +139,29 @@ const closeSidebar = () => {
                     @click="closeSidebar"
                 >
                     <span
-                        class="grid h-9 w-9 place-items-center rounded-xl text-base transition"
+                        class="grid h-9 w-9 place-items-center rounded-xl transition"
                         :class="
                             item.active
                                 ? 'bg-[#071923]/10 text-[#071923]'
                                 : 'bg-white/10 text-white/75 group-hover:bg-white/15 group-hover:text-white'
                         "
                     >
-                        {{ item.icon }}
+                        <svg
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                            class="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.25"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path
+                                v-for="path in iconPaths[item.icon]"
+                                :key="path"
+                                :d="path"
+                            />
+                        </svg>
                     </span>
 
                     <span>{{ item.label }}</span>
@@ -284,32 +310,49 @@ const closeSidebar = () => {
 
         <!-- Mobile Bottom Navigation -->
         <nav
-            class="fixed left-3 right-3 z-40 rounded-[1.75rem] border border-white/10 bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] p-1.5 shadow-2xl shadow-[#0b3a56]/25 backdrop-blur-2xl lg:hidden bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]"
+            class="fixed left-4 right-4 z-40 rounded-[1.55rem] border border-slate-200/80 bg-white p-1.5 shadow-[0_14px_34px_rgba(15,23,42,0.16)] ring-1 ring-white/80 backdrop-blur-2xl lg:hidden bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]"
         >
-            <div class="grid grid-cols-4 gap-1.5">
+            <div class="grid grid-cols-4 gap-1">
                 <Link
                     v-for="item in navItems"
                     :key="item.shortLabel"
                     :href="item.href"
-                    class="flex min-h-[58px] flex-col items-center justify-center rounded-2xl px-1.5 py-2 text-[10px] font-black transition active:scale-95"
+                    class="flex min-h-[56px] flex-col items-center justify-center rounded-[1.1rem] px-1 py-1.5 text-[10px] font-black text-[#071923] transition hover:bg-[#eef8fb] active:scale-95"
                     :class="
                         item.active
-                            ? 'bg-white text-[#071923] shadow-lg shadow-black/15'
-                            : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                            ? 'bg-[#eef8fb] ring-1 ring-[#0084ff]/10'
+                            : 'bg-white'
                     "
                 >
                     <span
-                        class="mb-1 grid h-6 w-6 place-items-center rounded-full text-sm leading-none"
+                        class="mb-1 grid h-8 w-8 place-items-center rounded-full bg-white text-[#0084ff] transition"
                         :class="
                             item.active
-                                ? 'bg-[#071923]/10 text-[#071923]'
-                                : 'bg-white/10 text-white/75'
+                                ? 'shadow-sm ring-1 ring-[#0084ff]/15'
+                                : 'ring-1 ring-slate-200/70'
                         "
                     >
-                        {{ item.icon }}
+                        <svg
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                            class="h-[21px] w-[21px]"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.35"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path
+                                v-for="path in iconPaths[item.icon]"
+                                :key="path"
+                                :d="path"
+                            />
+                        </svg>
                     </span>
 
-                    <span class="truncate">
+                    <span
+                        class="truncate text-[9.5px] font-black leading-none text-[#071923]"
+                    >
                         {{ item.shortLabel }}
                     </span>
                 </Link>

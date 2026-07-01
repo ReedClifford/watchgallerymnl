@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\AboutUsContent;
-use App\Models\Transaction;
 use App\Models\Watch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -12,6 +11,13 @@ use Inertia\Inertia;
 
 class PublicPageController extends Controller
 {
+    private const LISTED_STATUSES = [
+        'available',
+        'reserved',
+        'in_transit',
+        'sold',
+    ];
+
     public function welcome(Request $request)
     {
         $search = trim((string) $request->input('search', ''));
@@ -24,15 +30,6 @@ class PublicPageController extends Controller
         );
 
         $inDemand = trim((string) $request->input('in_demand', ''));
-
-        /*
-        |--------------------------------------------------------------------------
-        | Collection Sort / Random Seed
-        |--------------------------------------------------------------------------
-        | Default collection order is randomized per fresh page reload.
-        | The generated seed is appended to pagination links, so page 2 / page 3
-        | keeps the same randomized sequence instead of reshuffling.
-        */
         $sort = $this->normalizeSortFilter($request->input('sort', 'random'));
 
         $randomSeed = (int) $request->input('random_seed');
@@ -85,8 +82,8 @@ class PublicPageController extends Controller
         ];
 
         $heroWatches = Watch::query()
-            ->with('primaryImage')
-            ->where('status', 'available')
+            ->with($this->watchCardRelations())
+            ->whereIn('status', self::LISTED_STATUSES)
             ->where('is_visible', true)
             ->latest('id')
             ->limit(5)
@@ -95,8 +92,8 @@ class PublicPageController extends Controller
             ->values();
 
         $watchesQuery = Watch::query()
-            ->with('primaryImage')
-            ->where('status', 'available')
+            ->with($this->watchCardRelations())
+            ->whereIn('status', self::LISTED_STATUSES)
             ->where('is_visible', true)
             ->when($search !== '', function ($query) use ($search, $normalizedSearch) {
                 $query->where(function ($subQuery) use ($search, $normalizedSearch) {
@@ -165,10 +162,14 @@ class PublicPageController extends Controller
         return Inertia::render('Welcome', [
             'heroWatches' => $heroWatches,
             'watches' => $watches,
-            'transactions' => $this->visibleTransactions(),
+            'transactions' => $this->visibleSoldWatches(),
             'aboutUs' => $this->aboutUsContent(),
             'availableCount' => Watch::query()
                 ->where('status', 'available')
+                ->where('is_visible', true)
+                ->count(),
+            'listedCount' => Watch::query()
+                ->whereIn('status', self::LISTED_STATUSES)
                 ->where('is_visible', true)
                 ->count(),
             'filters' => [
@@ -178,8 +179,6 @@ class PublicPageController extends Controller
                 'in_demand' => $inDemand,
                 'sort' => $sort,
                 'random_seed' => $sort === 'random' ? $randomSeed : null,
-
-                // Legacy fallback so old Vue state/URLs do not break.
                 'category' => $gender,
             ],
         ]);
@@ -195,14 +194,14 @@ class PublicPageController extends Controller
                 'images' => function ($query) {
                     $query
                         ->orderBy('sort_order')
-                        ->latest('id');
+                        ->orderBy('id');
                 },
             ])
             ->where('id', (int) $identifier)
             ->firstOrFail();
 
         abort_unless(
-            $watch->is_visible && $watch->status === 'available',
+            $watch->is_visible && in_array($watch->status, self::LISTED_STATUSES, true),
             404
         );
 
@@ -216,14 +215,13 @@ class PublicPageController extends Controller
     {
         $actualPrice = $this->actualWatchPrice($watch);
         $displayName = $this->watchDisplayName($watch);
+        $status = $this->normalizeWatchStatus($watch->status);
 
         return [
             'id' => $watch->id,
             'url' => url('/watches/' . $watch->id),
 
             'brand' => $watch->brand,
-
-            // Main names. Keep all of these so Vue has reliable fallbacks.
             'model_name' => $watch->model_name,
             'display_name' => $displayName,
             'name' => $displayName,
@@ -252,18 +250,14 @@ class PublicPageController extends Controller
             'actual_price' => $actualPrice,
             'display_price' => $actualPrice,
 
-            'status' => $watch->status,
+            'status' => $status,
+            'status_label' => $this->watchStatusLabel($status),
             'is_visible' => (bool) $watch->is_visible,
             'is_in_demand' => (bool) ($watch->is_in_demand ?? false),
-
-            // Legacy fallback. You can remove this later once all Vue files use is_in_demand.
             'is_featured' => (bool) ($watch->is_featured ?? false),
-
             'allow_inquiry' => (bool) ($watch->allow_inquiry ?? true),
 
-            'image_url' => $watch->primaryImage
-                ? $this->storageUrl($watch->primaryImage->image_path)
-                : null,
+            'image_url' => $this->watchImageUrl($watch),
         ];
     }
 
@@ -292,61 +286,48 @@ class PublicPageController extends Controller
 
         return [
             ...$this->watchCard($watch),
-
             'images' => $images->values(),
-
             'case_material' => $watch->case_material,
             'crystal' => $watch->crystal,
             'bracelet_or_strap' => $watch->bracelet_or_strap,
             'water_resistance' => $watch->water_resistance,
             'warranty_type' => $watch->warranty_type,
-
-            // Important: this sends box_papers to Vue.
             'box_papers' => $watch->box_papers,
         ];
     }
 
-    private function visibleTransactions()
+    private function visibleSoldWatches()
     {
-        $query = Transaction::query()
-            ->with('firstImage')
-            ->whereHas('images', function ($imageQuery) {
-                $imageQuery
-                    ->whereNotNull('image_path')
-                    ->where('image_path', '!=', '');
-            });
-
-        if (Schema::hasColumn('transactions', 'is_visible')) {
-            $query->where('is_visible', true);
-        }
-
-        if (Schema::hasColumn('transactions', 'transaction_date')) {
-            $query->latest('transaction_date');
-        } else {
-            $query->latest('id');
-        }
-
-        return $query
+        return Watch::query()
+            ->with($this->watchCardRelations())
+            ->where('status', 'sold')
+            ->where('is_visible', true)
+            ->latest('date_sold')
+            ->latest('id')
             ->limit(12)
             ->get()
-            ->map(function ($transaction) {
+            ->map(function (Watch $watch) {
+                $displayName = $this->watchDisplayName($watch);
+
                 return [
-                    'id' => $transaction->id,
-                    'title' => $transaction->title ?: 'Successful Transaction',
-                    'caption' => $transaction->caption,
-                    'transaction_date' => $transaction->transaction_date ?: $transaction->created_at,
-                    'image_url' => $this->storageUrl($transaction->firstImage?->image_path),
+                    'id' => $watch->id,
+                    'watch_id' => $watch->id,
+                    'title' => $displayName,
+                    'caption' => trim((string) ($watch->brand ?: '')) ?: 'Thank you for trusting Watch Gallery Manila.',
+                    'transaction_date' => $watch->date_sold ?: $watch->created_at,
+                    'status' => 'sold',
+                    'status_label' => 'Sold',
+                    'image_url' => $this->watchImageUrl($watch),
                 ];
             })
-            ->filter(fn ($transaction) => filled($transaction['image_url']))
             ->values();
     }
 
     private function randomWatchCards(Watch $currentWatch)
     {
         return Watch::query()
-            ->with('primaryImage')
-            ->where('status', 'available')
+            ->with($this->watchCardRelations())
+            ->whereIn('status', self::LISTED_STATUSES)
             ->where('is_visible', true)
             ->where('id', '!=', $currentWatch->id)
             ->inRandomOrder()
@@ -387,12 +368,10 @@ class PublicPageController extends Controller
             'eyebrow' => $aboutUs->eyebrow,
             'title' => $aboutUs->title,
             'body' => $aboutUs->body,
-
             'dealer_name' => $aboutUs->dealer_name,
             'dealer_message' => $aboutUs->dealer_message,
             'owner_bio' => $aboutUs->owner_bio,
             'owner_image_url' => $this->storageUrl($aboutUs->owner_image_path),
-
             'images' => $aboutUs->images
                 ? $aboutUs->images
                     ->sortBy([
@@ -416,6 +395,38 @@ class PublicPageController extends Controller
         ];
     }
 
+
+    private function watchCardRelations(): array
+    {
+        return [
+            'primaryImage',
+            'images' => function ($query) {
+                $query
+                    ->orderByDesc('is_primary')
+                    ->orderBy('sort_order')
+                    ->orderBy('id');
+            },
+        ];
+    }
+
+    private function watchImageUrl(Watch $watch): ?string
+    {
+        if ($watch->primaryImage?->image_path) {
+            return $this->storageUrl($watch->primaryImage->image_path);
+        }
+
+        if ($watch->relationLoaded('images')) {
+            $fallbackImage = $watch->images
+                ? $watch->images->first(fn ($image) => filled($image->image_path))
+                : null;
+
+            if ($fallbackImage?->image_path) {
+                return $this->storageUrl($fallbackImage->image_path);
+            }
+        }
+
+        return null;
+    }
 
     private function normalizeSortFilter($value): string
     {
@@ -464,17 +475,8 @@ class PublicPageController extends Controller
             return;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Stable Random Order
-        |--------------------------------------------------------------------------
-        | RAND(seed) creates a randomized order that is stable while the same
-        | seed is used. We append this seed to pagination links, so page 2/3
-        | will not reshuffle until the user refreshes/reopens without a seed.
-        */
         $query->orderByRaw('RAND(' . (int) $randomSeed . ')');
     }
-
 
     private function normalizeGenderFilter($value): string
     {
@@ -491,6 +493,29 @@ class PublicPageController extends Controller
     private function normalizeSearchTerm(string $value): string
     {
         return strtolower((string) preg_replace('/[^a-zA-Z0-9]/', '', $value));
+    }
+
+    private function normalizeWatchStatus(?string $status): string
+    {
+        $status = strtolower(trim((string) $status));
+        $status = str_replace(['-', ' '], '_', $status);
+
+        return match ($status) {
+            'reserved' => 'reserved',
+            'in_transit', 'intransit', 'transit' => 'in_transit',
+            'sold' => 'sold',
+            default => 'available',
+        };
+    }
+
+    private function watchStatusLabel(?string $status): string
+    {
+        return match ($this->normalizeWatchStatus($status)) {
+            'reserved' => 'Reserved',
+            'in_transit' => 'In Transit',
+            'sold' => 'Sold',
+            default => 'Available',
+        };
     }
 
     private function watchGender(Watch $watch): string
@@ -529,6 +554,7 @@ class PublicPageController extends Controller
     {
         return $watch->discounted_price
             ?: $watch->selling_price
+            ?: $watch->sold_price
             ?: null;
     }
 

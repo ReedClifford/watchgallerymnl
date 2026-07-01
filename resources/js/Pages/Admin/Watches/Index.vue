@@ -24,6 +24,7 @@ const props = defineProps({
             available: 0,
             sold: 0,
             reserved: 0,
+            in_transit: 0,
         }),
     },
 });
@@ -39,6 +40,9 @@ const search = ref(props.filters?.search ?? "");
 const galleryOrder = ref([]);
 const primaryImageToken = ref("");
 const uploadedImageKeyCounter = ref(0);
+const statusProcessingIds = ref(new Set());
+const visibilityProcessingIds = ref(new Set());
+const pendingStatusByWatch = ref({});
 
 const tabOrder = ["details", "pricing", "photos"];
 
@@ -181,11 +185,11 @@ const soldFields = [
     },
 ];
 
-const statusOptions = [
+const quickStatusOptions = [
     {
         value: "available",
         label: "Available",
-        description: "Shown as available stock",
+        description: "Ready to sell",
     },
     {
         value: "reserved",
@@ -193,11 +197,22 @@ const statusOptions = [
         description: "Temporarily held",
     },
     {
-        value: "sold",
-        label: "Sold",
-        description: "Completed sale",
+        value: "in_transit",
+        label: "In Transit",
+        description: "Incoming / for delivery",
     },
 ];
+
+const statusLabel = (status) => {
+    const labels = {
+        available: "Available",
+        reserved: "Reserved",
+        in_transit: "In Transit",
+        sold: "Sold",
+    };
+
+    return labels[status] || "Available";
+};
 
 const swalTheme = {
     background: "#ffffff",
@@ -224,6 +239,54 @@ const toast = Swal.mixin({
         popup: "wgm-swal-popup",
     },
 });
+
+const setStatusProcessing = (watchId, isProcessing, nextStatus = null) => {
+    const updatedIds = new Set(statusProcessingIds.value);
+
+    if (isProcessing) {
+        updatedIds.add(watchId);
+        pendingStatusByWatch.value = {
+            ...pendingStatusByWatch.value,
+            [watchId]: nextStatus,
+        };
+    } else {
+        updatedIds.delete(watchId);
+
+        const updatedPendingStatus = { ...pendingStatusByWatch.value };
+        delete updatedPendingStatus[watchId];
+        pendingStatusByWatch.value = updatedPendingStatus;
+    }
+
+    statusProcessingIds.value = updatedIds;
+};
+
+const setVisibilityProcessing = (watchId, isProcessing) => {
+    const updatedIds = new Set(visibilityProcessingIds.value);
+
+    if (isProcessing) {
+        updatedIds.add(watchId);
+    } else {
+        updatedIds.delete(watchId);
+    }
+
+    visibilityProcessingIds.value = updatedIds;
+};
+
+const isStatusProcessing = (watch) => {
+    return Boolean(watch?.id && statusProcessingIds.value.has(watch.id));
+};
+
+const isVisibilityProcessing = (watch) => {
+    return Boolean(watch?.id && visibilityProcessingIds.value.has(watch.id));
+};
+
+const refreshInventory = () => {
+    router.reload({
+        only: ["watches", "counts", "filters"],
+        preserveScroll: true,
+        preserveState: false,
+    });
+};
 
 const defaultForm = () => ({
     _method: "",
@@ -273,6 +336,11 @@ const filterOptions = computed(() => [
         value: "reserved",
         label: "Reserved",
         count: props.counts?.reserved ?? 0,
+    },
+    {
+        value: "in_transit",
+        label: "In Transit",
+        count: props.counts?.in_transit ?? 0,
     },
     {
         value: "sold",
@@ -327,7 +395,7 @@ const stepText = computed(() => {
     }
 
     if (activeModalTab.value === "pricing") {
-        return "Step 2 of 3: Pricing and status";
+        return "Step 2 of 3: Pricing and publishing";
     }
 
     return "Step 3 of 3: Photos";
@@ -336,6 +404,7 @@ const stepText = computed(() => {
 const totalWatches = computed(() => props.counts?.all ?? 0);
 const availableCount = computed(() => props.counts?.available ?? 0);
 const reservedCount = computed(() => props.counts?.reserved ?? 0);
+const inTransitCount = computed(() => props.counts?.in_transit ?? 0);
 const soldCount = computed(() => props.counts?.sold ?? 0);
 
 const visibleExistingImages = computed(() => {
@@ -419,7 +488,8 @@ const formatMoney = (value) => {
 const statusClass = (status) => {
     const classes = {
         available: "bg-[#eef8fb] text-[#0b3a56] ring-[#0b3a56]/20",
-        reserved: "bg-slate-100 text-slate-600 ring-slate-300",
+        reserved: "bg-amber-50 text-amber-700 ring-amber-200",
+        in_transit: "bg-blue-50 text-blue-700 ring-blue-200",
         sold: "bg-[#071923] text-white ring-[#071923]/20",
     };
 
@@ -801,16 +871,6 @@ const removeExistingImage = async (image) => {
     });
 };
 
-const setStatus = (status) => {
-    form.status = status;
-
-    if (status !== "sold") {
-        form.sold_price = "";
-        form.date_sold = "";
-        form.buyer_name = "";
-    }
-};
-
 const validateCurrentStep = () => {
     form.clearErrors();
 
@@ -1006,22 +1066,124 @@ const markAsSold = async (watch) => {
 
     router.patch(route("admin.watches.mark-as-sold", watch.id), result.value, {
         preserveScroll: true,
+        preserveState: false,
+        replace: true,
         onSuccess: () => {
             toast.fire({
                 icon: "success",
                 title: "Watch marked as sold",
             });
+
+            refreshInventory();
         },
-        onError: () => {
+        onError: (errors) => {
+            const firstError =
+                Object.values(errors || {})?.[0] ||
+                "Please check the sold details and try again.";
+
             Swal.fire({
                 title: "Unable to mark as sold",
-                text: "Please check the sold details and try again.",
+                text: firstError,
                 icon: "error",
                 confirmButtonText: "Okay",
                 ...swalTheme,
             });
         },
     });
+};
+
+const changeWatchStatus = async (watch, status) => {
+    if (!watch || watch.status === status || watch.status === "sold") {
+        return;
+    }
+
+    if (isStatusProcessing(watch)) {
+        return;
+    }
+
+    setStatusProcessing(watch.id, true, status);
+
+    router.patch(
+        route("admin.watches.update-status", watch.id),
+        { status },
+        {
+            preserveScroll: true,
+            preserveState: false,
+            replace: true,
+            onSuccess: () => {
+                toast.fire({
+                    icon: "success",
+                    title: `Status changed to ${statusLabel(status)}`,
+                });
+
+                refreshInventory();
+            },
+            onError: (errors) => {
+                const firstError =
+                    Object.values(errors || {})?.[0] ||
+                    "Please check the watch status, route, database enum, and try again.";
+
+                Swal.fire({
+                    title: "Unable to update status",
+                    text: firstError,
+                    icon: "error",
+                    confirmButtonText: "Okay",
+                    ...swalTheme,
+                });
+            },
+            onFinish: () => {
+                setStatusProcessing(watch.id, false);
+            },
+        },
+    );
+};
+
+const toggleWatchVisibility = async (watch) => {
+    if (!watch) return;
+
+    if (isVisibilityProcessing(watch)) {
+        return;
+    }
+
+    const nextVisibility = !Boolean(watch.is_visible);
+
+    setVisibilityProcessing(watch.id, true);
+
+    router.patch(
+        route("admin.watches.toggle-visibility", watch.id),
+        { is_visible: nextVisibility },
+        {
+            preserveScroll: true,
+            preserveState: false,
+            replace: true,
+            onSuccess: () => {
+                toast.fire({
+                    icon: "success",
+                    title: nextVisibility
+                        ? "Listing is now visible"
+                        : "Listing is now hidden",
+                });
+
+                refreshInventory();
+            },
+            onError: (errors) => {
+                const firstError =
+                    Object.values(errors || {})?.[0] ||
+                    "Please check the route/controller setup and try again.";
+
+                Swal.fire({
+                    title: "Unable to update visibility",
+                    text: firstError,
+                    icon: "error",
+                    confirmButtonText: "Okay",
+                    ...swalTheme,
+                });
+            },
+            onFinish: () => {
+                setVisibilityProcessing(watch.id, false);
+            },
+        },
+    );
 };
 
 const duplicateWatch = async (watch) => {
@@ -1169,9 +1331,9 @@ const deleteWatch = async (watch) => {
                                 <p
                                     class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300 sm:text-base"
                                 >
-                                    Manage available, reserved, and sold watch
-                                    listings with a cleaner premium control
-                                    panel.
+                                    Manage available, reserved, in transit, and
+                                    sold watch listings with a cleaner premium
+                                    control panel.
                                 </p>
 
                                 <div class="mt-6 flex flex-wrap gap-2">
@@ -1185,6 +1347,12 @@ const deleteWatch = async (watch) => {
                                         class="rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-bold text-slate-200 backdrop-blur"
                                     >
                                         {{ availableCount }} available
+                                    </span>
+
+                                    <span
+                                        class="rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-xs font-bold text-slate-200 backdrop-blur"
+                                    >
+                                        {{ inTransitCount }} in transit
                                     </span>
 
                                     <span
@@ -1278,7 +1446,7 @@ const deleteWatch = async (watch) => {
                 </section>
 
                 <!-- Stats -->
-                <section class="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <section class="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-5">
                     <div
                         class="rounded-3xl border border-slate-200 bg-white p-4 shadow-xl shadow-[#0b3a56]/10"
                     >
@@ -1310,17 +1478,32 @@ const deleteWatch = async (watch) => {
                     </div>
 
                     <div
-                        class="rounded-3xl border border-slate-200 bg-white p-4 shadow-xl shadow-[#0b3a56]/10"
+                        class="rounded-3xl border border-amber-100 bg-amber-50 p-4 shadow-xl shadow-[#0b3a56]/10"
                     >
                         <p
-                            class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400"
+                            class="text-[10px] font-black uppercase tracking-[0.18em] text-amber-600"
                         >
                             Reserved
                         </p>
                         <p
-                            class="mt-2 text-2xl font-black text-[#071923] sm:text-3xl"
+                            class="mt-2 text-2xl font-black text-amber-700 sm:text-3xl"
                         >
                             {{ reservedCount }}
+                        </p>
+                    </div>
+
+                    <div
+                        class="rounded-3xl border border-blue-100 bg-blue-50 p-4 shadow-xl shadow-[#0b3a56]/10"
+                    >
+                        <p
+                            class="text-[10px] font-black uppercase tracking-[0.18em] text-blue-600"
+                        >
+                            In Transit
+                        </p>
+                        <p
+                            class="mt-2 text-2xl font-black text-blue-700 sm:text-3xl"
+                        >
+                            {{ inTransitCount }}
                         </p>
                     </div>
 
@@ -1380,7 +1563,7 @@ const deleteWatch = async (watch) => {
                                     class="rounded-full px-3 py-1 text-xs font-black capitalize ring-1 backdrop-blur"
                                     :class="statusClass(watch.status)"
                                 >
-                                    {{ watch.status }}
+                                    {{ statusLabel(watch.status) }}
                                 </span>
                             </div>
 
@@ -1500,11 +1683,76 @@ const deleteWatch = async (watch) => {
                             </div>
 
                             <div class="space-y-2">
+                                <div
+                                    v-if="watch.status !== 'sold'"
+                                    class="rounded-3xl border border-slate-200 bg-slate-50 p-3"
+                                >
+                                    <p
+                                        class="mb-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400"
+                                    >
+                                        Quick Status
+                                    </p>
+
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <button
+                                            v-for="status in quickStatusOptions"
+                                            :key="status.value"
+                                            type="button"
+                                            :disabled="
+                                                watch.status === status.value ||
+                                                isStatusProcessing(watch)
+                                            "
+                                            @click="
+                                                changeWatchStatus(
+                                                    watch,
+                                                    status.value,
+                                                )
+                                            "
+                                            class="rounded-2xl px-2 py-2.5 text-[11px] font-black transition active:scale-95 disabled:cursor-not-allowed disabled:active:scale-100"
+                                            :class="
+                                                watch.status === status.value
+                                                    ? 'bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] text-white shadow-lg shadow-[#0b3a56]/15 ring-1 ring-[#0b3a56]/20'
+                                                    : 'border border-slate-200 bg-white text-slate-500 hover:border-[#0b3a56]/30 hover:bg-[#eef8fb] hover:text-[#0b3a56]'
+                                            "
+                                        >
+                                            {{
+                                                pendingStatusByWatch[
+                                                    watch.id
+                                                ] === status.value
+                                                    ? "Updating..."
+                                                    : status.label
+                                            }}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <button
+                                    v-if="watch.status === 'sold'"
+                                    type="button"
+                                    :disabled="isVisibilityProcessing(watch)"
+                                    @click="toggleWatchVisibility(watch)"
+                                    class="w-full rounded-2xl px-4 py-3 text-sm font-black shadow-lg transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+                                    :class="
+                                        watch.is_visible
+                                            ? 'border border-slate-200 bg-white text-slate-600 shadow-slate-200/60 hover:bg-slate-50'
+                                            : 'bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] text-white shadow-[#0b3a56]/15 hover:brightness-110'
+                                    "
+                                >
+                                    {{
+                                        isVisibilityProcessing(watch)
+                                            ? "Updating..."
+                                            : watch.is_visible
+                                              ? "Hide from Landing Page"
+                                              : "Show on Landing Page"
+                                    }}
+                                </button>
+
                                 <button
                                     v-if="watch.status !== 'sold'"
                                     type="button"
+                                    :disabled="isStatusProcessing(watch)"
                                     @click="markAsSold(watch)"
-                                    class="w-full rounded-2xl bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] px-4 py-3 text-sm font-black text-white shadow-lg shadow-[#0b3a56]/15 ring-1 ring-white/20 transition hover:brightness-110 active:scale-95"
+                                    class="w-full rounded-2xl bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] px-4 py-3 text-sm font-black text-white shadow-lg shadow-[#0b3a56]/15 ring-1 ring-white/20 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70 active:scale-95"
                                 >
                                     Mark as Sold
                                 </button>
@@ -2008,68 +2256,57 @@ const deleteWatch = async (watch) => {
                                                 <h3
                                                     class="text-base font-black text-[#071923]"
                                                 >
-                                                    Inventory Status
+                                                    Publishing Options
                                                 </h3>
                                                 <p
                                                     class="mt-1 text-sm text-slate-500"
                                                 >
-                                                    Choose how this watch should
-                                                    appear.
+                                                    New watches are
+                                                    automatically saved as
+                                                    Available. Change Available,
+                                                    Reserved, or In Transit
+                                                    directly from the watch
+                                                    card.
                                                 </p>
                                             </div>
 
                                             <div
-                                                class="grid gap-3 sm:grid-cols-3"
+                                                class="rounded-3xl border border-[#0b3a56]/10 bg-[#eef8fb] p-4"
                                             >
-                                                <button
-                                                    v-for="status in statusOptions"
-                                                    :key="status.value"
-                                                    type="button"
-                                                    @click="
-                                                        setStatus(status.value)
-                                                    "
-                                                    class="rounded-2xl border p-4 text-left transition active:scale-[0.98]"
-                                                    :class="
-                                                        form.status ===
-                                                        status.value
-                                                            ? 'border-[#0b3a56]/30 bg-[#eef8fb] ring-1 ring-[#0b3a56]/10'
-                                                            : 'border-slate-200 bg-white hover:border-[#0b3a56]/30 hover:bg-slate-50'
-                                                    "
+                                                <div
+                                                    class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                                                 >
-                                                    <div
-                                                        class="flex items-center justify-between gap-3"
-                                                    >
+                                                    <div>
                                                         <p
-                                                            class="font-black"
-                                                            :class="
-                                                                form.status ===
-                                                                status.value
-                                                                    ? 'text-[#0b3a56]'
-                                                                    : 'text-[#071923]'
-                                                            "
+                                                            class="text-sm font-black text-[#071923]"
                                                         >
-                                                            {{ status.label }}
+                                                            Current Status
                                                         </p>
-
-                                                        <span
-                                                            class="grid h-6 w-6 place-items-center rounded-full border text-xs"
-                                                            :class="
-                                                                form.status ===
-                                                                status.value
-                                                                    ? 'border-[#0b3a56] bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] text-white'
-                                                                    : 'border-slate-300 text-transparent'
-                                                            "
+                                                        <p
+                                                            class="mt-1 text-xs text-slate-500"
                                                         >
-                                                            ✓
-                                                        </span>
+                                                            Status changes are
+                                                            now card-level
+                                                            actions for faster
+                                                            inventory updates.
+                                                        </p>
                                                     </div>
 
-                                                    <p
-                                                        class="mt-1 text-xs text-slate-500"
+                                                    <span
+                                                        class="inline-flex w-fit rounded-full px-3 py-1.5 text-xs font-black ring-1"
+                                                        :class="
+                                                            statusClass(
+                                                                form.status,
+                                                            )
+                                                        "
                                                     >
-                                                        {{ status.description }}
-                                                    </p>
-                                                </button>
+                                                        {{
+                                                            statusLabel(
+                                                                form.status,
+                                                            )
+                                                        }}
+                                                    </span>
+                                                </div>
                                             </div>
 
                                             <div
@@ -2095,7 +2332,9 @@ const deleteWatch = async (watch) => {
                                                             class="text-xs text-slate-500"
                                                         >
                                                             Customers can see
-                                                            this listing.
+                                                            this listing when
+                                                            its section allows
+                                                            the status.
                                                         </p>
                                                     </div>
                                                 </label>

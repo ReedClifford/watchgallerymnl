@@ -7,8 +7,11 @@ use App\Models\Watch;
 use App\Models\WatchImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -19,7 +22,14 @@ class WatchController extends Controller
     private const ADMIN_STATUSES = [
         'available',
         'reserved',
+        'in_transit',
         'sold',
+    ];
+
+    private const QUICK_STATUS_OPTIONS = [
+        'available',
+        'reserved',
+        'in_transit',
     ];
 
     public function index(Request $request)
@@ -38,11 +48,17 @@ class WatchController extends Controller
             'all' => (clone $baseCountQuery)->count(),
             'available' => Watch::query()->where('status', 'available')->count(),
             'reserved' => Watch::query()->where('status', 'reserved')->count(),
+            'in_transit' => Watch::query()->where('status', 'in_transit')->count(),
             'sold' => Watch::query()->where('status', 'sold')->count(),
         ];
 
         $watches = Watch::query()
-            ->with(['primaryImage', 'images'])
+            ->with([
+                'primaryImage',
+                'images' => function ($query) {
+                    $query->orderBy('sort_order')->orderBy('id');
+                },
+            ])
             ->whereIn('status', self::ADMIN_STATUSES)
             ->when($status !== 'all', function ($query) use ($status) {
                 $query->where('status', $status);
@@ -57,6 +73,15 @@ class WatchController extends Controller
                         ->orWhere('gender', 'like', "%{$search}%");
                 });
             })
+            ->orderByRaw("
+                CASE status
+                    WHEN 'available' THEN 1
+                    WHEN 'reserved' THEN 2
+                    WHEN 'in_transit' THEN 3
+                    WHEN 'sold' THEN 4
+                    ELSE 5
+                END
+            ")
             ->latest('id')
             ->paginate(20)
             ->withQueryString()
@@ -93,11 +118,12 @@ class WatchController extends Controller
 
                     'status' => $watch->status,
                     'is_visible' => (bool) $watch->is_visible,
-                    'is_in_demand' => (bool) $watch->is_in_demand,
+                    'is_in_demand' => (bool) ($watch->is_in_demand ?? false),
 
                     'sold_price' => $watch->sold_price,
                     'date_sold' => optional($watch->date_sold)->format('Y-m-d'),
                     'buyer_name' => $watch->buyer_name,
+                    'serial_number' => $watch->serial_number,
 
                     'image_url' => $watch->primaryImage
                         ? Storage::url($watch->primaryImage->image_path)
@@ -131,19 +157,22 @@ class WatchController extends Controller
 
         $this->validateTotalImageLimit(null, $request);
 
-        $watchData = $this->prepareWatchData($validated);
+        $watchData = $this->prepareWatchData($validated, null, true);
 
-        $watch = Watch::create($watchData);
+        DB::transaction(function () use ($watchData, $request) {
+            $watch = Watch::create($watchData);
 
-        $uploadedImages = $this->uploadImages($watch, $request);
+            $uploadedImages = $this->uploadImages($watch, $request);
 
-        $this->applyImageOrder(
-            $watch,
-            $uploadedImages,
-            $request->input('image_order', [])
-        );
-        $this->applyPrimaryImage($watch, $uploadedImages, $request);
-        $this->normalizeImageOrder($watch);
+            $this->applyImageOrder(
+                $watch,
+                $uploadedImages,
+                $request->input('image_order', [])
+            );
+
+            $this->applyPrimaryImage($watch, $uploadedImages, $request);
+            $this->normalizeImageOrder($watch);
+        });
 
         return redirect()
             ->route('admin.watches.index')
@@ -152,25 +181,28 @@ class WatchController extends Controller
 
     public function update(Request $request, Watch $watch)
     {
-        $validated = $this->validateWatch($request);
+        $validated = $this->validateWatch($request, $watch);
 
         $this->validateTotalImageLimit($watch, $request);
 
-        $watchData = $this->prepareWatchData($validated);
+        $watchData = $this->prepareWatchData($validated, $watch, false);
 
-        $this->deleteRemovedImages($watch, $request->input('removed_image_ids', []));
+        DB::transaction(function () use ($watch, $watchData, $request) {
+            $this->deleteRemovedImages($watch, $request->input('removed_image_ids', []));
 
-        $watch->update($watchData);
+            $watch->update($watchData);
 
-        $uploadedImages = $this->uploadImages($watch, $request);
+            $uploadedImages = $this->uploadImages($watch, $request);
 
-        $this->applyImageOrder(
-            $watch,
-            $uploadedImages,
-            $request->input('image_order', [])
-        );
-        $this->applyPrimaryImage($watch, $uploadedImages, $request);
-        $this->normalizeImageOrder($watch);
+            $this->applyImageOrder(
+                $watch,
+                $uploadedImages,
+                $request->input('image_order', [])
+            );
+
+            $this->applyPrimaryImage($watch, $uploadedImages, $request);
+            $this->normalizeImageOrder($watch);
+        });
 
         return redirect()
             ->route('admin.watches.index')
@@ -179,11 +211,15 @@ class WatchController extends Controller
 
     public function destroy(Watch $watch)
     {
-        foreach ($watch->images as $image) {
-            Storage::disk('public')->delete($image->image_path);
-        }
+        $watch->load('images');
 
-        $watch->delete();
+        DB::transaction(function () use ($watch) {
+            foreach ($watch->images as $image) {
+                Storage::disk('public')->delete($image->image_path);
+            }
+
+            $watch->delete();
+        });
 
         return redirect()
             ->route('admin.watches.index')
@@ -196,22 +232,65 @@ class WatchController extends Controller
             'sold_price' => ['nullable', 'numeric', 'min:0'],
             'date_sold' => ['nullable', 'date'],
             'buyer_name' => ['nullable', 'string', 'max:255'],
+            'serial_number' => ['nullable', 'string', 'max:255'],
         ]);
 
         $soldPrice = $validated['sold_price']
             ?: $watch->discounted_price
             ?: $watch->selling_price;
 
-        $watch->update([
+        $payload = [
             'status' => 'sold',
+            'is_visible' => true,
             'sold_price' => $soldPrice,
             'date_sold' => $validated['date_sold'] ?? now()->toDateString(),
             'buyer_name' => $validated['buyer_name'] ?? null,
+            'serial_number' => $validated['serial_number'] ?? null,
+        ];
+
+        if (Schema::hasColumn('watches', 'is_featured')) {
+            $payload['is_featured'] = false;
+        }
+
+        $watch->update($this->removeMissingColumns($payload));
+
+        return back()->with('success', 'Watch marked as sold successfully.');
+    }
+
+    public function updateStatus(Request $request, Watch $watch)
+    {
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(self::QUICK_STATUS_OPTIONS)],
         ]);
 
-        return redirect()
-            ->route('admin.watches.index')
-            ->with('success', 'Watch marked as sold successfully.');
+        if ($watch->status === 'sold') {
+            return back()->withErrors([
+                'status' => 'Sold watches cannot be changed from the quick status buttons. Use visibility toggle or edit sold details instead.',
+            ]);
+        }
+
+        $watch->update([
+            'status' => $validated['status'],
+            'sold_price' => null,
+            'date_sold' => null,
+            'buyer_name' => null,
+            'serial_number' => null,
+        ]);
+
+        return back()->with('success', 'Watch status updated.');
+    }
+
+    public function toggleVisibility(Request $request, Watch $watch)
+    {
+        $validated = $request->validate([
+            'is_visible' => ['required', 'boolean'],
+        ]);
+
+        $watch->update([
+            'is_visible' => (bool) $validated['is_visible'],
+        ]);
+
+        return back()->with('success', 'Visibility updated.');
     }
 
     public function duplicate(Watch $watch)
@@ -224,38 +303,113 @@ class WatchController extends Controller
             },
         ]);
 
-        $duplicate = $watch->replicate();
-        $duplicate->model_name = trim((string) $watch->model_name) . ' (duplicate)';
-        $duplicate->status = 'available';
-        $duplicate->is_visible = true;
-        $duplicate->sold_price = null;
-        $duplicate->date_sold = null;
-        $duplicate->buyer_name = null;
-        $duplicate->save();
+        DB::transaction(function () use ($watch) {
+            $duplicate = $watch->replicate();
 
-        foreach ($watch->images as $image) {
-            $copiedPath = $this->copyWatchImagePath($image->image_path);
+            $duplicate->model_name = trim((string) $watch->model_name) . ' (duplicate)';
+            $duplicate->status = 'available';
+            $duplicate->is_visible = true;
+            $duplicate->sold_price = null;
+            $duplicate->date_sold = null;
+            $duplicate->buyer_name = null;
+            $duplicate->serial_number = null;
 
-            if (! $copiedPath) {
-                continue;
+            if (Schema::hasColumn('watches', 'is_featured')) {
+                $duplicate->is_featured = false;
             }
 
-            WatchImage::create([
-                'watch_id' => $duplicate->id,
-                'image_path' => $copiedPath,
-                'is_primary' => (bool) $image->is_primary,
-                'sort_order' => $image->sort_order,
-            ]);
-        }
+            if (Schema::hasColumn('watches', 'is_best_seller')) {
+                $duplicate->is_best_seller = false;
+            }
 
-        $this->normalizeImageOrder($duplicate);
+            if (Schema::hasColumn('watches', 'slug')) {
+                $duplicate->slug = $this->uniqueSlug(
+                    trim($duplicate->model_name . ' ' . ($watch->reference_number ?? ''))
+                );
+            }
 
-        return redirect()
-            ->route('admin.watches.index')
-            ->with('success', 'Watch duplicated successfully.');
+            if (Schema::hasColumn('watches', 'sort_order')) {
+                $duplicate->sort_order = ((int) Watch::max('sort_order')) + 1;
+            }
+
+            $duplicate->save();
+
+            foreach ($watch->images as $image) {
+                $copiedPath = $this->copyWatchImagePath($image->image_path);
+
+                if (! $copiedPath) {
+                    continue;
+                }
+
+                WatchImage::create([
+                    'watch_id' => $duplicate->id,
+                    'image_path' => $copiedPath,
+                    'is_primary' => (bool) $image->is_primary,
+                    'sort_order' => $image->sort_order,
+                ]);
+            }
+
+            $this->normalizeImageOrder($duplicate);
+        });
+
+        return back()->with('success', 'Watch duplicated successfully.');
     }
 
-    private function validateWatch(Request $request): array
+    public function setPrimaryImage(WatchImage $image)
+    {
+        DB::transaction(function () use ($image) {
+            WatchImage::where('watch_id', $image->watch_id)
+                ->update(['is_primary' => false]);
+
+            $image->update(['is_primary' => true]);
+        });
+
+        return back()->with('success', 'Primary image updated.');
+    }
+
+    public function destroyImage(WatchImage $image)
+    {
+        DB::transaction(function () use ($image) {
+            $watchId = $image->watch_id;
+            $wasPrimary = $image->is_primary;
+
+            Storage::disk('public')->delete($image->image_path);
+            $image->delete();
+
+            if ($wasPrimary) {
+                WatchImage::where('watch_id', $watchId)
+                    ->orderBy('sort_order')
+                    ->orderBy('id')
+                    ->first()
+                    ?->update(['is_primary' => true]);
+            }
+        });
+
+        return back()->with('success', 'Image deleted.');
+    }
+
+    public function reorderImages(Request $request, Watch $watch)
+    {
+        $data = $request->validate([
+            'images' => ['required', 'array'],
+            'images.*.id' => ['required', 'integer', 'exists:watch_images,id'],
+            'images.*.sort_order' => ['required', 'integer', 'min:0'],
+        ]);
+
+        DB::transaction(function () use ($data, $watch) {
+            foreach ($data['images'] as $image) {
+                WatchImage::where('watch_id', $watch->id)
+                    ->where('id', $image['id'])
+                    ->update([
+                        'sort_order' => $image['sort_order'],
+                    ]);
+            }
+        });
+
+        return back()->with('success', 'Image order updated.');
+    }
+
+    private function validateWatch(Request $request, ?Watch $watch = null): array
     {
         return $request->validate([
             'brand' => ['required', 'string', 'max:255'],
@@ -264,7 +418,6 @@ class WatchController extends Controller
             'condition' => ['required', 'string', 'max:255'],
 
             'gender' => ['nullable', 'in:unisex,men,women'],
-
             'description' => ['nullable', 'string'],
 
             'movement' => ['nullable', 'string', 'max:255'],
@@ -281,13 +434,14 @@ class WatchController extends Controller
             'selling_price' => ['nullable', 'numeric', 'min:0'],
             'discounted_price' => ['nullable', 'numeric', 'min:0'],
 
-            'status' => ['required', 'in:available,reserved,sold'],
+            'status' => ['nullable', Rule::in(self::ADMIN_STATUSES)],
             'is_visible' => ['nullable', 'boolean'],
             'is_in_demand' => ['nullable', 'boolean'],
 
             'sold_price' => ['nullable', 'numeric', 'min:0'],
             'date_sold' => ['nullable', 'date'],
             'buyer_name' => ['nullable', 'string', 'max:255'],
+            'serial_number' => ['nullable', 'string', 'max:255'],
 
             'images' => ['nullable', 'array', 'max:' . self::MAX_WATCH_IMAGES],
             'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
@@ -302,7 +456,7 @@ class WatchController extends Controller
         ]);
     }
 
-    private function prepareWatchData(array $validated): array
+    private function prepareWatchData(array $validated, ?Watch $watch = null, bool $isCreating = false): array
     {
         unset(
             $validated['images'],
@@ -314,14 +468,25 @@ class WatchController extends Controller
 
         $validated['gender'] = $validated['gender'] ?? 'unisex';
 
-        if (($validated['status'] ?? null) === 'hidden') {
+        if ($isCreating) {
+            $validated['status'] = 'available';
+            $validated['is_visible'] = array_key_exists('is_visible', $validated)
+                ? filter_var($validated['is_visible'], FILTER_VALIDATE_BOOLEAN)
+                : true;
+        } else {
+            $validated['status'] = $validated['status'] ?? $watch?->status ?? 'available';
+            $validated['is_visible'] = array_key_exists('is_visible', $validated)
+                ? filter_var($validated['is_visible'], FILTER_VALIDATE_BOOLEAN)
+                : (bool) ($watch?->is_visible ?? true);
+        }
+
+        if ($validated['status'] === 'hidden') {
             $validated['status'] = 'available';
         }
 
-        $validated['is_visible'] = filter_var(
-            $validated['is_visible'] ?? false,
-            FILTER_VALIDATE_BOOLEAN
-        );
+        if (! in_array($validated['status'], self::ADMIN_STATUSES, true)) {
+            $validated['status'] = 'available';
+        }
 
         $validated['is_in_demand'] = filter_var(
             $validated['is_in_demand'] ?? false,
@@ -343,9 +508,10 @@ class WatchController extends Controller
             $validated['date_sold'] = null;
             $validated['sold_price'] = null;
             $validated['buyer_name'] = null;
+            $validated['serial_number'] = null;
         }
 
-        return $validated;
+        return $this->removeMissingColumns($validated);
     }
 
     private function validateTotalImageLimit(?Watch $watch, Request $request): void
@@ -605,5 +771,39 @@ class WatchController extends Controller
                 ->first()
                 ?->update(['is_primary' => true]);
         }
+    }
+
+    private function uniqueSlug(string $value, ?int $ignoreId = null): string
+    {
+        $baseSlug = Str::slug($value);
+
+        if (! $baseSlug) {
+            $baseSlug = 'watch-' . Str::random(8);
+        }
+
+        $slug = $baseSlug;
+        $counter = 2;
+
+        while (
+            Watch::where('slug', $slug)
+                ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
+                ->exists()
+        ) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+        }
+
+        return $slug;
+    }
+
+    private function removeMissingColumns(array $data): array
+    {
+        foreach (array_keys($data) as $column) {
+            if (! Schema::hasColumn('watches', $column)) {
+                unset($data[$column]);
+            }
+        }
+
+        return $data;
     }
 }

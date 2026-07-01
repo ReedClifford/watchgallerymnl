@@ -697,12 +697,6 @@ const specs = computed(() => {
                                 About this watch
                             </h2>
                         </div>
-
-                        <span
-                            class="inline-flex w-fit rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400"
-                        >
-                            watches.description
-                        </span>
                     </div>
 
                     <p

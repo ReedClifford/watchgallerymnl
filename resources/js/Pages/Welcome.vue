@@ -19,6 +19,10 @@ const props = defineProps({
         type: Object,
         default: null,
     },
+    availableCount: {
+        type: Number,
+        default: 0,
+    },
     filters: {
         type: Object,
         default: () => ({
@@ -64,6 +68,32 @@ const normalizeFilterValue = (value) => {
         .trim()
         .toLowerCase()
         .replace(/[\s-]+/g, "_");
+};
+
+const watchStatusLabel = (status) => {
+    const normalized = normalizeFilterValue(status);
+
+    const labels = {
+        available: "Available",
+        reserved: "Reserved",
+        in_transit: "In Transit",
+        sold: "Sold",
+    };
+
+    return labels[normalized] || "Available";
+};
+
+const watchStatusBadgeClass = (status) => {
+    const normalized = normalizeFilterValue(status);
+
+    const classes = {
+        available: "watch-badge-status-available",
+        reserved: "watch-badge-status-reserved",
+        in_transit: "watch-badge-status-transit",
+        sold: "watch-badge-status-sold",
+    };
+
+    return classes[normalized] || "watch-badge-status-available";
 };
 
 const normalizeCondition = (value) => {
@@ -442,8 +472,10 @@ const ownerInitials = computed(() => {
         .toUpperCase();
 });
 
-const availableCount = computed(
-    () => props.watches?.total ?? watchesData.value.length,
+const availableCount = computed(() => Number(props.availableCount || 0));
+
+const listedCount = computed(() =>
+    Number(props.watches?.total ?? watchesData.value.length),
 );
 
 const formatMoney = (value) => {
@@ -866,7 +898,7 @@ const messengerLink = (watch = null) => {
                             <p
                                 class="text-[10px] font-black uppercase tracking-[0.35em] text-[#0b3a56]"
                             >
-                                Latest Available Watches
+                                Latest Watch Listings
                             </p>
 
                             <h2
@@ -1005,10 +1037,7 @@ const messengerLink = (watch = null) => {
                                                 class="collage-more-count text-4xl font-black text-white sm:text-5xl"
                                             >
                                                 +{{
-                                                    Math.max(
-                                                        availableCount - 4,
-                                                        0,
-                                                    )
+                                                    Math.max(listedCount - 4, 0)
                                                 }}
                                             </p>
                                             <p
@@ -1033,7 +1062,7 @@ const messengerLink = (watch = null) => {
                                             <p
                                                 class="mt-1 text-xs text-slate-500"
                                             >
-                                                More available watches
+                                                More watch listings
                                             </p>
                                         </div>
                                     </div>
@@ -1049,7 +1078,7 @@ const messengerLink = (watch = null) => {
                                 <p
                                     class="text-base font-black text-[#071923] sm:text-lg"
                                 >
-                                    No available watches yet.
+                                    No watch listings yet.
                                 </p>
                                 <p class="mt-2 text-sm text-slate-500">
                                     Add watches from your admin inventory.
@@ -1130,7 +1159,7 @@ const messengerLink = (watch = null) => {
                                     </h2>
 
                                     <p class="mt-2 text-sm text-slate-500">
-                                        Browse all current stocks ready for
+                                        Browse all current listings ready for
                                         inquiry.
                                     </p>
                                 </div>
@@ -1356,9 +1385,9 @@ const messengerLink = (watch = null) => {
                                         class="mt-1 text-sm font-black tracking-[-0.01em] text-[#071923]"
                                     >
                                         Showing
-                                        {{ browsableWatches.length }} watch<span
-                                            v-if="browsableWatches.length !== 1"
-                                            >es</span
+                                        {{ listedCount }} listing<span
+                                            v-if="listedCount !== 1"
+                                            >s</span
                                         >
                                     </p>
                                 </div>
@@ -1442,8 +1471,19 @@ const messengerLink = (watch = null) => {
                                                 }}
                                             </span>
 
-                                            <span class="watch-badge-available">
-                                                Available
+                                            <span
+                                                class="watch-badge-status"
+                                                :class="
+                                                    watchStatusBadgeClass(
+                                                        watch.status,
+                                                    )
+                                                "
+                                            >
+                                                {{
+                                                    watchStatusLabel(
+                                                        watch.status,
+                                                    )
+                                                }}
                                             </span>
 
                                             <span
@@ -1515,7 +1555,7 @@ const messengerLink = (watch = null) => {
                                 <p
                                     class="text-base font-black text-[#071923] sm:text-lg"
                                 >
-                                    No available watches found.
+                                    No matching watches found.
                                 </p>
                                 <p class="mt-2 text-sm text-slate-500">
                                     Try clearing your search or message us
@@ -1678,7 +1718,13 @@ const messengerLink = (watch = null) => {
 
                                     <div
                                         class="absolute left-4 right-4 top-4 z-20 flex items-center justify-between gap-2"
-                                    ></div>
+                                    >
+                                        <span
+                                            class="watch-badge-status watch-badge-status-sold"
+                                        >
+                                            Sold
+                                        </span>
+                                    </div>
 
                                     <div
                                         class="absolute inset-x-0 bottom-0 z-20 p-4 sm:p-5"
@@ -2721,7 +2767,8 @@ button:hover .shop-now-icon {
 
     .watch-badge-available,
     .watch-badge-gender,
-    .watch-badge-demand {
+    .watch-badge-demand,
+    .watch-badge-status {
         padding: 0.28rem 0.44rem;
         font-size: 0.44rem;
         letter-spacing: 0.06em;
@@ -3109,7 +3156,8 @@ button:hover .shop-now-icon {
 
 .watch-badge-available,
 .watch-badge-gender,
-.watch-badge-demand {
+.watch-badge-demand,
+.watch-badge-status {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -3136,6 +3184,50 @@ button:hover .shop-now-icon {
     );
     color: #ffffff;
     text-shadow: 0 1px 10px rgba(7, 25, 35, 0.28);
+}
+
+.watch-badge-status-available {
+    border: 1px solid rgba(255, 255, 255, 0.36);
+    background: linear-gradient(
+        135deg,
+        rgba(11, 58, 86, 0.88),
+        rgba(59, 130, 246, 0.38)
+    );
+    color: #ffffff;
+    text-shadow: 0 1px 10px rgba(7, 25, 35, 0.28);
+}
+
+.watch-badge-status-reserved {
+    border: 1px solid rgba(253, 230, 138, 0.55);
+    background: linear-gradient(
+        135deg,
+        rgba(180, 83, 9, 0.94),
+        rgba(245, 158, 11, 0.64)
+    );
+    color: #ffffff;
+    text-shadow: 0 1px 10px rgba(120, 53, 15, 0.32);
+}
+
+.watch-badge-status-transit {
+    border: 1px solid rgba(186, 230, 253, 0.55);
+    background: linear-gradient(
+        135deg,
+        rgba(14, 116, 144, 0.94),
+        rgba(59, 130, 246, 0.58)
+    );
+    color: #ffffff;
+    text-shadow: 0 1px 10px rgba(8, 47, 73, 0.3);
+}
+
+.watch-badge-status-sold {
+    border: 1px solid rgba(203, 213, 225, 0.52);
+    background: linear-gradient(
+        135deg,
+        rgba(7, 25, 35, 0.95),
+        rgba(51, 65, 85, 0.78)
+    );
+    color: #ffffff;
+    text-shadow: 0 1px 10px rgba(2, 6, 23, 0.34);
 }
 
 .watch-badge-gender {
@@ -3709,7 +3801,8 @@ button:hover .shop-now-icon {
 
     .shop-grid-card .watch-badge-available,
     .shop-grid-card .watch-badge-gender,
-    .shop-grid-card .watch-badge-demand {
+    .shop-grid-card .watch-badge-demand,
+    .shop-grid-card .watch-badge-status {
         padding: 0.18rem 0.3rem;
         font-size: 0.34rem;
         line-height: 1;
