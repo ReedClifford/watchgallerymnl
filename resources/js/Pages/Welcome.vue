@@ -82,7 +82,7 @@ const watchStatusLabel = (status) => {
         available: "Available",
         reserved: "Reserved",
         in_transit: "In Transit",
-        sold: "Sold",
+        sold: "Sold Out",
     };
 
     return labels[normalized] || "Available";
