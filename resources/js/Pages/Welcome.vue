@@ -841,11 +841,11 @@ const messengerLink = (watch = null) => {
                         :href="messengerLink()"
                         target="_blank"
                         rel="noopener noreferrer"
-                        aria-label="Message Watch Gallery Manila on Messenger"
-                        class="group/messenger inline-flex items-center gap-2 rounded-full border border-white/15 bg-gradient-to-br from-[#0084ff] via-[#0b78ff] to-[#0b3a56] px-4 py-2.5 font-black text-white shadow-lg shadow-[#0084ff]/25 transition hover:brightness-110 hover:shadow-[#0084ff]/35 active:scale-95"
+                        aria-label="Inquire on Messenger"
+                        class="group relative flex h-[56px] flex-col items-center justify-center gap-1 overflow-hidden rounded-[1.35rem] border border-white/20 bg-[linear-gradient(135deg,#4ca3ff_0%,#2f7dff_48%,#3267ff_100%)] text-white shadow-[0_14px_34px_rgba(47,125,255,0.45)] ring-1 ring-white/20 transition hover:brightness-110 active:scale-95"
                     >
                         <span
-                            class="grid h-6 w-6 place-items-center rounded-full bg-white/18 transition group-hover/messenger:bg-white/25"
+                            class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_0%,rgba(255,255,255,0.42),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.16),transparent_48%)]"
                         >
                             <svg
                                 viewBox="0 0 24 24"

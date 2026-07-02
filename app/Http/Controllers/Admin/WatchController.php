@@ -304,6 +304,9 @@ public function duplicate(Watch $watch)
     ]);
 
     DB::transaction(function () use ($watch) {
+        $baseModelName = $this->duplicateBaseModelName($watch->model_name);
+        $nextModelName = $this->nextDuplicateModelName($baseModelName);
+
         $duplicate = $watch->replicate([
             'slug',
             'sku',
@@ -316,7 +319,7 @@ public function duplicate(Watch $watch)
             'updated_at',
         ]);
 
-        $duplicate->model_name = trim((string) $watch->model_name) . ' (duplicate)';
+        $duplicate->model_name = $nextModelName;
         $duplicate->status = 'available';
         $duplicate->is_visible = true;
 
@@ -395,6 +398,44 @@ public function duplicate(Watch $watch)
     });
 
     return back()->with('success', 'Watch duplicated successfully.');
+}
+
+
+private function duplicateBaseModelName(?string $modelName): string
+{
+    $name = trim((string) $modelName);
+
+    if ($name === '') {
+        return 'Watch';
+    }
+
+    // Removes existing duplicate suffix only if it is numeric.
+    // Example: "Panda V1 (2)" becomes "Panda V1"
+    return trim((string) preg_replace('/\s+\(\d+\)$/', '', $name));
+}
+
+private function nextDuplicateModelName(string $baseModelName): string
+{
+    $existingNames = Watch::query()
+        ->where(function ($query) use ($baseModelName) {
+            $query
+                ->where('model_name', $baseModelName)
+                ->orWhere('model_name', 'like', $baseModelName . ' (%)');
+        })
+        ->pluck('model_name');
+
+    $highestNumber = 0;
+    $escapedBaseName = preg_quote($baseModelName, '/');
+
+    foreach ($existingNames as $existingName) {
+        $existingName = trim((string) $existingName);
+
+        if (preg_match('/^' . $escapedBaseName . '\s+\((\d+)\)$/', $existingName, $matches)) {
+            $highestNumber = max($highestNumber, (int) $matches[1]);
+        }
+    }
+
+    return $baseModelName . ' (' . ($highestNumber + 1) . ')';
 }
 
     public function setPrimaryImage(WatchImage $image)
