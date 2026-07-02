@@ -202,4 +202,4 @@ class DashboardController extends Controller
             'device_breakdown' => $deviceBreakdown,
         ];
     }
-}
+}   
