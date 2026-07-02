@@ -247,7 +247,7 @@ const truncateChartLabel = (value, limit = 28) => {
 
 const dailyVisitsChartSeries = computed(() => [
     {
-        name: "Valid Visits",
+        name: "Visits",
         data: dailyVisits.value.map((day) => Number(day.visits || 0)),
     },
     {
@@ -354,72 +354,6 @@ const dailyVisitsChartOptions = computed(() => ({
                         style: { fontSize: "10px" },
                     },
                 },
-            },
-        },
-    ],
-}));
-
-const qualityChartSeries = computed(() => [
-    engagementRate.value,
-    uniqueVisitorRate.value,
-]);
-
-const qualityChartOptions = computed(() => ({
-    chart: {
-        type: "radialBar",
-        toolbar: { show: false },
-        fontFamily: chartFontFamily,
-        parentHeightOffset: 0,
-    },
-    labels: ["Engaged visits", "Unique visits"],
-    colors: ["#0b3a56", "#38bdf8"],
-    stroke: { lineCap: "round" },
-    plotOptions: {
-        radialBar: {
-            hollow: { size: "42%" },
-            track: { background: "#e2e8f0" },
-            dataLabels: {
-                name: {
-                    fontSize: "12px",
-                    fontWeight: 900,
-                    color: "#64748b",
-                },
-                value: {
-                    fontSize: "22px",
-                    fontWeight: 950,
-                    color: "#071923",
-                    formatter: (value) => `${Math.round(Number(value || 0))}%`,
-                },
-                total: {
-                    show: true,
-                    label: "Quality",
-                    color: "#64748b",
-                    formatter: () => `${engagementRate.value}%`,
-                },
-            },
-        },
-    },
-    legend: {
-        show: true,
-        position: "bottom",
-        fontWeight: 900,
-        markers: { radius: 12 },
-    },
-    responsive: [
-        {
-            breakpoint: 640,
-            options: {
-                chart: { height: 225 },
-                plotOptions: {
-                    radialBar: {
-                        hollow: { size: "36%" },
-                        dataLabels: {
-                            value: { fontSize: "18px" },
-                            total: { show: true },
-                        },
-                    },
-                },
-                legend: { fontSize: "11px" },
             },
         },
     ],
@@ -638,8 +572,8 @@ const analyticsCards = computed(() => [
         accent: "from-slate-200 via-slate-300 to-slate-400",
     },
     {
-        label: "Engaged",
-        value: todayEngagedVisits.value,
+        label: "Engagement Rate",
+        value: `${engagementRate.value}%`,
         helper: "10s+ or clicked/scrolled",
         icon: "◆",
         tone: "text-[#071923]",
@@ -890,7 +824,13 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                             href="#dashboard-sales"
                             class="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-600 transition hover:border-[#0b3a56]/30 hover:bg-[#eef8fb] hover:text-[#0b3a56] active:scale-95"
                         >
-                            Sales
+                            Sales KPIs
+                        </a>
+                        <a
+                            href="#dashboard-sales-records"
+                            class="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-600 transition hover:border-[#0b3a56]/30 hover:bg-[#eef8fb] hover:text-[#0b3a56] active:scale-95"
+                        >
+                            Sales Records
                         </a>
                         <a
                             href="#dashboard-performance"
@@ -929,15 +869,15 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                                 <h3
                                     class="mt-4 max-w-2xl text-2xl font-black tracking-tight text-white sm:text-3xl"
                                 >
-                                    Traffic, interest, and visitor behavior
+                                    Website traffic and visitor behavior
                                 </h3>
 
                                 <p
                                     class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300"
                                 >
-                                    Valid visits are counted after 5 seconds.
-                                    Engaged visits mean the visitor stayed 10+
-                                    seconds or interacted with the page.
+                                    This section is only for website visits,
+                                    engagement, devices, and viewed watch pages.
+                                    It does not include sales or profit.
                                 </p>
                             </div>
 
@@ -1062,7 +1002,7 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                                 </div>
                             </section>
 
-                            <!-- Quality + Device Charts -->
+                            <!-- Engagement + Device Charts -->
                             <section class="grid gap-5">
                                 <div
                                     class="rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
@@ -1070,31 +1010,75 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                                     <p
                                         class="text-[10px] font-black uppercase tracking-[0.28em] text-[#0b3a56]"
                                     >
-                                        Visit Quality
+                                        Engagement Rate
                                     </p>
                                     <h4
                                         class="mt-1 text-lg font-black text-[#071923]"
                                     >
-                                        Engaged vs unique visits
+                                        {{ engagementRate }}% engaged today
                                     </h4>
                                     <p
                                         class="mt-1 text-xs font-semibold leading-relaxed text-slate-500"
                                     >
-                                        Engaged rate shows how many valid visits
-                                        stayed longer or interacted. Unique
-                                        visits show how much of today's traffic
-                                        came from different browsers.
+                                        Visitors who stayed 10+ seconds or
+                                        clicked/scrolled. This belongs to
+                                        website analytics, not sales.
                                     </p>
 
                                     <div
-                                        class="mt-4 rounded-[1.5rem] border border-slate-100 bg-slate-50 p-2 sm:p-3"
+                                        class="mt-5 rounded-[1.5rem] border border-slate-100 bg-slate-50 p-4"
                                     >
-                                        <VueApexCharts
-                                            type="radialBar"
-                                            height="230"
-                                            :options="qualityChartOptions"
-                                            :series="qualityChartSeries"
-                                        />
+                                        <div
+                                            class="mb-2 flex items-center justify-between text-xs font-black text-slate-500"
+                                        >
+                                            <span>Engagement progress</span>
+                                            <span>{{ engagementRate }}%</span>
+                                        </div>
+
+                                        <div
+                                            class="h-3 overflow-hidden rounded-full bg-slate-200"
+                                        >
+                                            <div
+                                                class="h-full rounded-full bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#38bdf8] transition-all duration-700"
+                                                :style="{
+                                                    width: `${Math.min(engagementRate, 100)}%`,
+                                                }"
+                                            />
+                                        </div>
+
+                                        <div
+                                            class="mt-4 grid grid-cols-2 gap-2"
+                                        >
+                                            <div
+                                                class="rounded-2xl bg-white p-3 shadow-sm"
+                                            >
+                                                <p
+                                                    class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400"
+                                                >
+                                                    Engaged Visits
+                                                </p>
+                                                <p
+                                                    class="mt-1 text-xl font-black text-[#071923]"
+                                                >
+                                                    {{ todayEngagedVisits }}
+                                                </p>
+                                            </div>
+
+                                            <div
+                                                class="rounded-2xl bg-white p-3 shadow-sm"
+                                            >
+                                                <p
+                                                    class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400"
+                                                >
+                                                    Unique Rate
+                                                </p>
+                                                <p
+                                                    class="mt-1 text-xl font-black text-[#0b3a56]"
+                                                >
+                                                    {{ uniqueVisitorRate }}%
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -1176,6 +1160,26 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                 </section>
 
                 <!-- Inventory Stats -->
+
+                <div
+                    class="mb-3 rounded-[1.5rem] border border-slate-200 bg-white/85 p-4 shadow-lg shadow-[#0b3a56]/5 backdrop-blur"
+                >
+                    <p
+                        class="text-[10px] font-black uppercase tracking-[0.28em] text-[#0b3a56]"
+                    >
+                        Inventory Section
+                    </p>
+                    <h3
+                        class="mt-1 text-xl font-black tracking-tight text-[#071923]"
+                    >
+                        Stock and listing status
+                    </h3>
+                    <p class="mt-1 text-sm text-slate-500">
+                        These cards are about watch inventory, not website
+                        analytics.
+                    </p>
+                </div>
+
                 <section
                     id="dashboard-inventory"
                     class="mb-5 grid scroll-mt-24 grid-cols-2 gap-3 lg:grid-cols-4"
@@ -1224,6 +1228,26 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                 </section>
 
                 <!-- Money Stats -->
+
+                <div
+                    class="mb-3 rounded-[1.5rem] border border-slate-200 bg-white/85 p-4 shadow-lg shadow-[#0b3a56]/5 backdrop-blur"
+                >
+                    <p
+                        class="text-[10px] font-black uppercase tracking-[0.28em] text-[#0b3a56]"
+                    >
+                        Sales Section
+                    </p>
+                    <h3
+                        class="mt-1 text-xl font-black tracking-tight text-[#071923]"
+                    >
+                        Sales KPIs and financial totals
+                    </h3>
+                    <p class="mt-1 text-sm text-slate-500">
+                        These figures come from sold watches and sales records,
+                        separate from website analytics.
+                    </p>
+                </div>
+
                 <section
                     id="dashboard-sales"
                     class="mb-5 grid scroll-mt-24 gap-3 lg:grid-cols-3"
@@ -1272,6 +1296,26 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                 </section>
 
                 <!-- Performance Summary -->
+
+                <div
+                    class="mb-3 rounded-[1.5rem] border border-slate-200 bg-white/85 p-4 shadow-lg shadow-[#0b3a56]/5 backdrop-blur"
+                >
+                    <p
+                        class="text-[10px] font-black uppercase tracking-[0.28em] text-[#0b3a56]"
+                    >
+                        Business Performance
+                    </p>
+                    <h3
+                        class="mt-1 text-xl font-black tracking-tight text-[#071923]"
+                    >
+                        Inventory health and top performer
+                    </h3>
+                    <p class="mt-1 text-sm text-slate-500">
+                        Operational indicators based on inventory and sales
+                        records.
+                    </p>
+                </div>
+
                 <section
                     id="dashboard-performance"
                     class="mb-5 grid scroll-mt-24 gap-3 lg:grid-cols-3"
@@ -1419,6 +1463,26 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                         </div>
                     </div>
                 </section>
+
+                <div
+                    id="dashboard-sales-records"
+                    class="mb-3 scroll-mt-24 rounded-[1.5rem] border border-slate-200 bg-white/85 p-4 shadow-lg shadow-[#0b3a56]/5 backdrop-blur"
+                >
+                    <p
+                        class="text-[10px] font-black uppercase tracking-[0.28em] text-[#0b3a56]"
+                    >
+                        Sales Records
+                    </p>
+                    <h3
+                        class="mt-1 text-xl font-black tracking-tight text-[#071923]"
+                    >
+                        Best sellers and latest sold watches
+                    </h3>
+                    <p class="mt-1 text-sm text-slate-500">
+                        This area is sales history. It is not part of website
+                        visit analytics.
+                    </p>
+                </div>
 
                 <div class="grid gap-5 xl:grid-cols-[1.1fr_.9fr]">
                     <!-- Best Sellers -->
