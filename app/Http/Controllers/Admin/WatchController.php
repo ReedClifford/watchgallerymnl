@@ -293,67 +293,109 @@ class WatchController extends Controller
         return back()->with('success', 'Visibility updated.');
     }
 
-    public function duplicate(Watch $watch)
-    {
-        $watch->load([
-            'images' => function ($query) {
-                $query
-                    ->orderBy('sort_order')
-                    ->orderBy('id');
-            },
+public function duplicate(Watch $watch)
+{
+    $watch->load([
+        'images' => function ($query) {
+            $query
+                ->orderBy('sort_order')
+                ->orderBy('id');
+        },
+    ]);
+
+    DB::transaction(function () use ($watch) {
+        $duplicate = $watch->replicate([
+            'slug',
+            'sku',
+            'code',
+            'uuid',
+            'serial',
+            'serial_number',
+            'warranty_code',
+            'created_at',
+            'updated_at',
         ]);
 
-        DB::transaction(function () use ($watch) {
-            $duplicate = $watch->replicate();
+        $duplicate->model_name = trim((string) $watch->model_name) . ' (duplicate)';
+        $duplicate->status = 'available';
+        $duplicate->is_visible = true;
 
-            $duplicate->model_name = trim((string) $watch->model_name) . ' (duplicate)';
-            $duplicate->status = 'available';
-            $duplicate->is_visible = true;
+        if (Schema::hasColumn('watches', 'sold_price')) {
             $duplicate->sold_price = null;
+        }
+
+        if (Schema::hasColumn('watches', 'date_sold')) {
             $duplicate->date_sold = null;
+        }
+
+        if (Schema::hasColumn('watches', 'buyer_name')) {
             $duplicate->buyer_name = null;
+        }
+
+        if (Schema::hasColumn('watches', 'serial_number')) {
             $duplicate->serial_number = null;
+        }
 
-            if (Schema::hasColumn('watches', 'is_featured')) {
-                $duplicate->is_featured = false;
+        if (Schema::hasColumn('watches', 'serial')) {
+            $duplicate->serial = null;
+        }
+
+        if (Schema::hasColumn('watches', 'sku')) {
+            $duplicate->sku = null;
+        }
+
+        if (Schema::hasColumn('watches', 'code')) {
+            $duplicate->code = null;
+        }
+
+        if (Schema::hasColumn('watches', 'uuid')) {
+            $duplicate->uuid = (string) Str::uuid();
+        }
+
+        if (Schema::hasColumn('watches', 'warranty_code')) {
+            $duplicate->warranty_code = null;
+        }
+
+        if (Schema::hasColumn('watches', 'is_featured')) {
+            $duplicate->is_featured = false;
+        }
+
+        if (Schema::hasColumn('watches', 'is_best_seller')) {
+            $duplicate->is_best_seller = false;
+        }
+
+        if (Schema::hasColumn('watches', 'slug')) {
+            $duplicate->slug = $this->uniqueSlug(
+                trim($duplicate->model_name . ' ' . ($watch->reference_number ?? ''))
+            );
+        }
+
+        if (Schema::hasColumn('watches', 'sort_order')) {
+            $duplicate->sort_order = ((int) Watch::max('sort_order')) + 1;
+        }
+
+        $duplicate->save();
+
+        foreach ($watch->images as $image) {
+            $copiedPath = $this->copyWatchImagePath($image->image_path);
+
+            if (! $copiedPath) {
+                continue;
             }
 
-            if (Schema::hasColumn('watches', 'is_best_seller')) {
-                $duplicate->is_best_seller = false;
-            }
+            WatchImage::create([
+                'watch_id' => $duplicate->id,
+                'image_path' => $copiedPath,
+                'is_primary' => (bool) $image->is_primary,
+                'sort_order' => $image->sort_order,
+            ]);
+        }
 
-            if (Schema::hasColumn('watches', 'slug')) {
-                $duplicate->slug = $this->uniqueSlug(
-                    trim($duplicate->model_name . ' ' . ($watch->reference_number ?? ''))
-                );
-            }
+        $this->normalizeImageOrder($duplicate);
+    });
 
-            if (Schema::hasColumn('watches', 'sort_order')) {
-                $duplicate->sort_order = ((int) Watch::max('sort_order')) + 1;
-            }
-
-            $duplicate->save();
-
-            foreach ($watch->images as $image) {
-                $copiedPath = $this->copyWatchImagePath($image->image_path);
-
-                if (! $copiedPath) {
-                    continue;
-                }
-
-                WatchImage::create([
-                    'watch_id' => $duplicate->id,
-                    'image_path' => $copiedPath,
-                    'is_primary' => (bool) $image->is_primary,
-                    'sort_order' => $image->sort_order,
-                ]);
-            }
-
-            $this->normalizeImageOrder($duplicate);
-        });
-
-        return back()->with('success', 'Watch duplicated successfully.');
-    }
+    return back()->with('success', 'Watch duplicated successfully.');
+}
 
     public function setPrimaryImage(WatchImage $image)
     {
@@ -709,37 +751,43 @@ class WatchController extends Controller
             ?->update(['is_primary' => true]);
     }
 
-    private function copyWatchImagePath(?string $path): ?string
-    {
-        if (! filled($path)) {
-            return null;
-        }
-
-        $disk = Storage::disk('public');
-
-        if (! $disk->exists($path)) {
-            return null;
-        }
-
-        $directory = pathinfo($path, PATHINFO_DIRNAME);
-        $filename = pathinfo($path, PATHINFO_FILENAME);
-        $extension = pathinfo($path, PATHINFO_EXTENSION);
-
-        $safeFilename = Str::slug($filename) ?: 'watch-photo';
-        $newFilename = $safeFilename . '-copy-' . Str::random(8);
-
-        if ($extension) {
-            $newFilename .= '.' . $extension;
-        }
-
-        $newPath = $directory && $directory !== '.'
-            ? trim($directory, '/') . '/' . $newFilename
-            : $newFilename;
-
-        $disk->copy($path, $newPath);
-
-        return $newPath;
+private function copyWatchImagePath(?string $path): ?string
+{
+    if (! filled($path)) {
+        return null;
     }
+
+    $disk = Storage::disk('public');
+
+    if (! $disk->exists($path)) {
+        return null;
+    }
+
+    $directory = pathinfo($path, PATHINFO_DIRNAME);
+    $filename = pathinfo($path, PATHINFO_FILENAME);
+    $extension = pathinfo($path, PATHINFO_EXTENSION);
+
+    $safeFilename = Str::slug($filename) ?: 'watch-photo';
+    $newFilename = $safeFilename . '-copy-' . Str::random(8);
+
+    if ($extension) {
+        $newFilename .= '.' . $extension;
+    }
+
+    $newPath = $directory && $directory !== '.'
+        ? trim($directory, '/') . '/' . $newFilename
+        : $newFilename;
+
+    try {
+        $disk->copy($path, $newPath);
+    } catch (\Throwable $e) {
+        report($e);
+
+        return null;
+    }
+
+    return $newPath;
+}
 
     private function normalizeImageOrder(Watch $watch): void
     {

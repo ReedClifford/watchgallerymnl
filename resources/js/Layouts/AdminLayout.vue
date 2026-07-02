@@ -309,27 +309,32 @@ const closeSidebar = () => {
         </div>
 
         <!-- Mobile Bottom Navigation -->
+
         <nav
-            class="fixed left-4 right-4 z-40 rounded-[1.55rem] border border-slate-200/80 bg-white p-1.5 shadow-[0_14px_34px_rgba(15,23,42,0.16)] ring-1 ring-white/80 backdrop-blur-2xl lg:hidden bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]"
+            class="fixed left-4 right-4 z-40 overflow-hidden rounded-[1.65rem] border border-white/15 bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] p-1.5 shadow-[0_18px_42px_rgba(2,8,23,0.35)] ring-1 ring-white/10 backdrop-blur-2xl lg:hidden bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]"
         >
-            <div class="grid grid-cols-4 gap-1">
+            <div
+                class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_20%,rgba(96,165,250,0.28),transparent_32%),radial-gradient(circle_at_88%_10%,rgba(34,211,238,0.18),transparent_34%)]"
+            />
+
+            <div class="relative grid grid-cols-4 gap-1">
                 <Link
                     v-for="item in navItems"
                     :key="item.shortLabel"
                     :href="item.href"
-                    class="flex min-h-[56px] flex-col items-center justify-center rounded-[1.1rem] px-1 py-1.5 text-[10px] font-black text-[#071923] transition hover:bg-[#eef8fb] active:scale-95"
+                    class="group flex min-h-[58px] flex-col items-center justify-center rounded-[1.2rem] px-1 py-1.5 text-[10px] font-black text-white/65 transition duration-200 hover:bg-white/10 hover:text-white active:scale-95"
                     :class="
                         item.active
-                            ? 'bg-[#eef8fb] ring-1 ring-[#0084ff]/10'
-                            : 'bg-white'
+                            ? 'bg-white/15 text-white shadow-inner shadow-white/10 ring-1 ring-cyan-200/25'
+                            : ''
                     "
                 >
                     <span
-                        class="mb-1 grid h-8 w-8 place-items-center rounded-full bg-white text-[#0084ff] transition"
+                        class="mb-1 grid h-8 w-8 place-items-center rounded-full border transition duration-200"
                         :class="
                             item.active
-                                ? 'shadow-sm ring-1 ring-[#0084ff]/15'
-                                : 'ring-1 ring-slate-200/70'
+                                ? 'border-cyan-200/35 bg-cyan-100/20 text-cyan-100 shadow-[0_0_18px_rgba(125,211,252,0.22)]'
+                                : 'border-white/10 bg-white/10 text-sky-100/75 group-hover:border-white/20 group-hover:bg-white/15 group-hover:text-white'
                         "
                     >
                         <svg
@@ -351,7 +356,8 @@ const closeSidebar = () => {
                     </span>
 
                     <span
-                        class="truncate text-[9.5px] font-black leading-none text-[#071923]"
+                        class="truncate text-[9.5px] font-black leading-none tracking-tight"
+                        :class="item.active ? 'text-white' : 'text-white/70'"
                     >
                         {{ item.shortLabel }}
                     </span>

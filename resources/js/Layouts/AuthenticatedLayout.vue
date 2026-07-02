@@ -9,7 +9,7 @@ const showingNavigationDropdown = ref(false);
 
 <template>
     <div>
-        <div class="min-h-screen bg-gray-100">
+        <div class="min-h-screen bg-gray-100 pb-24 sm:pb-0">
             <nav
                 class="sticky top-0 z-50 border-b border-white/10 bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] shadow-xl shadow-slate-900/15"
             >
@@ -217,6 +217,143 @@ const showingNavigationDropdown = ref(false);
             <main>
                 <slot />
             </main>
+
+            <!-- Mobile Bottom Navigation -->
+            <div
+                class="fixed inset-x-0 bottom-0 z-50 border-t border-white/15 bg-gradient-to-r from-[#03111f] via-[#075985] to-[#0f172a] px-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-2 shadow-[0_-18px_45px_rgba(2,8,23,0.35)] backdrop-blur-xl sm:hidden"
+            >
+                <div
+                    class="mx-auto grid max-w-md grid-cols-4 items-center rounded-[2rem] border border-white/10 bg-white/10 p-1.5 shadow-inner shadow-white/10"
+                >
+                    <!-- Dashboard -->
+                    <Link
+                        :href="route('dashboard')"
+                        class="group flex flex-col items-center justify-center gap-1 rounded-[1.5rem] px-2 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100/70 transition duration-200 active:scale-95"
+                        :class="
+                            route().current('dashboard')
+                                ? 'bg-white text-[#075985] shadow-lg shadow-cyan-950/20'
+                                : 'hover:bg-white/10 hover:text-white'
+                        "
+                    >
+                        <svg
+                            class="h-6 w-6 transition duration-200"
+                            :class="
+                                route().current('dashboard')
+                                    ? 'text-[#0284c7]'
+                                    : 'text-cyan-200 group-hover:text-white'
+                            "
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M3 10.5 12 3l9 7.5" />
+                            <path d="M5 10v10h14V10" />
+                            <path d="M9 20v-6h6v6" />
+                        </svg>
+                        <span>Home</span>
+                    </Link>
+
+                    <!-- Watches -->
+                    <Link
+                        v-if="route().has('admin.watches.index')"
+                        :href="route('admin.watches.index')"
+                        class="group flex flex-col items-center justify-center gap-1 rounded-[1.5rem] px-2 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100/70 transition duration-200 active:scale-95"
+                        :class="
+                            route().current('admin.watches.*')
+                                ? 'bg-white text-[#075985] shadow-lg shadow-cyan-950/20'
+                                : 'hover:bg-white/10 hover:text-white'
+                        "
+                    >
+                        <svg
+                            class="h-6 w-6 transition duration-200"
+                            :class="
+                                route().current('admin.watches.*')
+                                    ? 'text-[#0284c7]'
+                                    : 'text-sky-200 group-hover:text-white'
+                            "
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <circle cx="12" cy="12" r="7" />
+                            <path d="M12 8v4l2.5 2.5" />
+                            <path d="M9 2h6" />
+                            <path d="M9 22h6" />
+                        </svg>
+                        <span>Watches</span>
+                    </Link>
+
+                    <!-- Sales -->
+                    <Link
+                        v-if="route().has('admin.sales.index')"
+                        :href="route('admin.sales.index')"
+                        class="group flex flex-col items-center justify-center gap-1 rounded-[1.5rem] px-2 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100/70 transition duration-200 active:scale-95"
+                        :class="
+                            route().current('admin.sales.*')
+                                ? 'bg-white text-[#075985] shadow-lg shadow-cyan-950/20'
+                                : 'hover:bg-white/10 hover:text-white'
+                        "
+                    >
+                        <svg
+                            class="h-6 w-6 transition duration-200"
+                            :class="
+                                route().current('admin.sales.*')
+                                    ? 'text-[#0284c7]'
+                                    : 'text-blue-100 group-hover:text-white'
+                            "
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M4 19V5" />
+                            <path d="M4 19h16" />
+                            <path d="M8 16v-5" />
+                            <path d="M12 16V8" />
+                            <path d="M16 16v-9" />
+                        </svg>
+                        <span>Sales</span>
+                    </Link>
+
+                    <!-- Profile -->
+                    <Link
+                        :href="route('profile.edit')"
+                        class="group flex flex-col items-center justify-center gap-1 rounded-[1.5rem] px-2 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100/70 transition duration-200 active:scale-95"
+                        :class="
+                            route().current('profile.edit')
+                                ? 'bg-white text-[#075985] shadow-lg shadow-cyan-950/20'
+                                : 'hover:bg-white/10 hover:text-white'
+                        "
+                    >
+                        <svg
+                            class="h-6 w-6 transition duration-200"
+                            :class="
+                                route().current('profile.edit')
+                                    ? 'text-[#0284c7]'
+                                    : 'text-cyan-100 group-hover:text-white'
+                            "
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <circle cx="12" cy="8" r="4" />
+                            <path d="M5 21a7 7 0 0 1 14 0" />
+                        </svg>
+                        <span>Me</span>
+                    </Link>
+                </div>
+            </div>
         </div>
     </div>
 </template>

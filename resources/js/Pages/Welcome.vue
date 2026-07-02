@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, ref, watch } from "vue";
 import { Head, Link, router } from "@inertiajs/vue3";
+import { usePageTracker } from "@/Composables/usePageTracker";
 
 const props = defineProps({
     heroWatches: {
@@ -35,6 +36,10 @@ const props = defineProps({
         }),
     },
 });
+usePageTracker({
+    pageType: "home",
+});
+
 const transactionStrip = ref(null);
 const isFiltering = ref(false);
 const filterRequestToken = ref(0);
@@ -829,7 +834,7 @@ const messengerLink = (watch = null) => {
                         href="#transactions"
                         class="rounded-full px-5 py-2.5 transition hover:bg-white/15 hover:text-white"
                     >
-                        Sold Gallery
+                        Transactions
                     </a>
 
                     <a
@@ -1629,7 +1634,10 @@ const messengerLink = (watch = null) => {
             </Transition>
 
             <!-- Transactions + About Us -->
-            <section id="transactions" class="bg-[#f8fafc] py-10 sm:py-14">
+            <section
+                id="transactions"
+                class="transaction-section bg-[#f8fafc] py-10 sm:py-14"
+            >
                 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div
                         class="mb-5 flex flex-col gap-4 sm:mb-7 sm:flex-row sm:items-end sm:justify-between"
@@ -1638,7 +1646,7 @@ const messengerLink = (watch = null) => {
                             <p
                                 class="text-[10px] font-black uppercase tracking-[0.35em] text-[#0b3a56]"
                             >
-                                Client Handover
+                                Client Handovers
                             </p>
 
                             <h2
@@ -1650,32 +1658,44 @@ const messengerLink = (watch = null) => {
                             <p
                                 class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500 sm:text-base"
                             >
-                                A glimpse of successful purchases and happy
-                                clients.
+                                Real client handovers and transaction photos
+                                uploaded from the admin panel.
                             </p>
                         </div>
 
-                        <div
-                            v-if="transactions.length > 1"
-                            class="hidden items-center gap-2 sm:flex"
-                        >
-                            <button
-                                type="button"
-                                @click="scrollTransactions(-1)"
-                                class="transaction-arrow"
-                                aria-label="Previous transactions"
+                        <div class="flex items-center gap-2">
+                            <div
+                                v-if="transactions.length"
+                                class="hidden rounded-2xl border border-[#0b3a56]/10 bg-white px-4 py-2 text-xs font-black text-[#0b3a56] shadow-sm sm:block"
                             >
-                                ‹
-                            </button>
+                                {{ transactions.length }} transaction<span
+                                    v-if="transactions.length !== 1"
+                                    >s</span
+                                >
+                            </div>
 
-                            <button
-                                type="button"
-                                @click="scrollTransactions(1)"
-                                class="transaction-arrow"
-                                aria-label="Next transactions"
+                            <div
+                                v-if="transactions.length > 1"
+                                class="hidden items-center gap-2 sm:flex"
                             >
-                                ›
-                            </button>
+                                <button
+                                    type="button"
+                                    @click="scrollTransactions(-1)"
+                                    class="transaction-arrow"
+                                    aria-label="Previous transactions"
+                                >
+                                    ‹
+                                </button>
+
+                                <button
+                                    type="button"
+                                    @click="scrollTransactions(1)"
+                                    class="transaction-arrow"
+                                    aria-label="Next transactions"
+                                >
+                                    ›
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -1690,54 +1710,59 @@ const messengerLink = (watch = null) => {
 
                         <div
                             ref="transactionStrip"
-                            class="transaction-carousel flex snap-x gap-4 overflow-x-auto pb-4"
+                            class="transaction-carousel flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-5 pt-1"
                         >
                             <article
                                 v-for="transaction in transactions"
                                 :key="transaction.id"
                                 class="transaction-card group"
                             >
-                                <div
-                                    class="relative aspect-[4/5] overflow-hidden rounded-t-[0.72rem] rounded-b-none bg-slate-100 sm:rounded-t-[0.82rem] lg:rounded-t-[0.92rem]"
-                                >
+                                <div class="transaction-card-media">
                                     <img
                                         v-if="transaction.image_url"
                                         :src="transaction.image_url"
-                                        :alt="transaction.title"
-                                        class="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                                        :alt="
+                                            transaction.title ||
+                                            'Watch Gallery Manila transaction'
+                                        "
+                                        class="transaction-card-image"
                                     />
 
                                     <div
                                         v-else
-                                        class="grid h-full w-full place-items-center text-sm text-slate-400"
+                                        class="grid h-full w-full place-items-center bg-slate-100 text-sm text-slate-400"
                                     >
                                         No Image
                                     </div>
 
                                     <div class="transaction-card-overlay" />
 
-                                    <div
-                                        class="absolute left-4 right-4 top-4 z-20 flex items-center justify-between gap-2"
-                                    >
+                                    <div class="transaction-card-topbar">
                                         <span
-                                            class="watch-badge-status watch-badge-status-sold"
+                                            v-if="transaction.transaction_date"
+                                            class="transaction-date-pill"
                                         >
-                                            Sold
+                                            {{
+                                                formatDate(
+                                                    transaction.transaction_date,
+                                                )
+                                            }}
                                         </span>
                                     </div>
 
-                                    <div
-                                        class="absolute inset-x-0 bottom-0 z-20 p-4 sm:p-5"
-                                    >
-                                        <h3
-                                            class="mt-1 line-clamp-2 text-lg font-black leading-tight tracking-[-0.03em] text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.45)]"
-                                        >
-                                            {{ transaction.title }}
+                                    <div class="transaction-card-content">
+                                        <p class="transaction-card-kicker">
+                                            Watch Gallery Manila
+                                        </p>
+
+                                        <h3 class="transaction-card-title">
+                                            {{
+                                                transaction.title ||
+                                                "Successful Transaction"
+                                            }}
                                         </h3>
 
-                                        <p
-                                            class="mt-2 line-clamp-2 text-sm font-medium leading-relaxed text-gray-100"
-                                        >
+                                        <p class="transaction-card-caption">
                                             {{
                                                 transaction.caption ||
                                                 "Thank you for trusting Watch Gallery Manila."
@@ -1752,7 +1777,7 @@ const messengerLink = (watch = null) => {
                             v-if="transactions.length > 1"
                             class="mt-1 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 sm:hidden"
                         >
-                            Swipe to view more handovers
+                            Swipe to view more transactions
                         </p>
                     </div>
 
@@ -1765,7 +1790,8 @@ const messengerLink = (watch = null) => {
                         </p>
 
                         <p class="mt-1 text-sm text-slate-500">
-                            Add visible transactions from the admin panel.
+                            Add visible transactions and images from the admin
+                            Transactions page.
                         </p>
                     </div>
 
@@ -2060,19 +2086,33 @@ const messengerLink = (watch = null) => {
             class="fixed inset-x-0 z-40 px-3 sm:hidden bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]"
         >
             <div
-                class="mx-auto max-w-[420px] rounded-[1.75rem] border border-white/70 bg-white/90 p-1.5 shadow-[0_18px_50px_rgba(15,23,42,0.18)] backdrop-blur-2xl"
+                class="relative mx-auto max-w-[420px] overflow-hidden rounded-[1.85rem] border border-white/15 bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] p-1.5 shadow-[0_18px_50px_rgba(2,8,23,0.38)] ring-1 ring-white/10 backdrop-blur-2xl"
             >
                 <div
-                    class="grid items-center gap-1.5"
+                    class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(96,165,250,0.30),transparent_35%),radial-gradient(circle_at_85%_0%,rgba(34,211,238,0.18),transparent_36%)]"
+                />
+
+                <div
+                    class="relative grid items-center gap-1.5"
                     :class="hasAboutUs ? 'grid-cols-3' : 'grid-cols-2'"
                 >
                     <button
                         type="button"
                         @click.prevent.stop="scrollToShop"
-                        class="flex h-[54px] flex-col items-center justify-center gap-1 rounded-[1.25rem] text-[#071923] transition hover:bg-slate-50 active:scale-95"
+                        class="group flex h-[56px] flex-col items-center justify-center gap-1 rounded-[1.35rem] text-white/75 transition hover:bg-white/10 hover:text-white active:scale-95"
+                        :class="
+                            shopOpened
+                                ? 'bg-white/15 text-white ring-1 ring-cyan-200/25 shadow-inner shadow-white/10'
+                                : ''
+                        "
                     >
                         <span
-                            class="grid h-9 w-9 place-items-center rounded-full bg-[#eef8fb] text-[#0084ff] shadow-sm shadow-[#0084ff]/10"
+                            class="grid h-9 w-9 place-items-center rounded-full border transition"
+                            :class="
+                                shopOpened
+                                    ? 'border-cyan-200/35 bg-cyan-100/20 text-cyan-100 shadow-[0_0_18px_rgba(125,211,252,0.22)]'
+                                    : 'border-white/10 bg-white/10 text-cyan-100/80 group-hover:border-white/20 group-hover:bg-white/15 group-hover:text-white'
+                            "
                         >
                             <svg
                                 viewBox="0 0 24 24"
@@ -2124,10 +2164,10 @@ const messengerLink = (watch = null) => {
                         v-if="hasAboutUs"
                         type="button"
                         @click="scrollToAbout"
-                        class="flex h-[54px] flex-col items-center justify-center gap-1 rounded-[1.25rem] text-[#071923] transition hover:bg-slate-50 active:scale-95"
+                        class="group flex h-[56px] flex-col items-center justify-center gap-1 rounded-[1.35rem] text-white/75 transition hover:bg-white/10 hover:text-white active:scale-95"
                     >
                         <span
-                            class="grid h-9 w-9 place-items-center rounded-full bg-[#eef8fb] text-[#0084ff] shadow-sm shadow-[#0084ff]/10"
+                            class="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/10 text-sky-100/80 transition group-hover:border-white/20 group-hover:bg-white/15 group-hover:text-white"
                         >
                             <svg
                                 viewBox="0 0 24 24"
@@ -2155,19 +2195,19 @@ const messengerLink = (watch = null) => {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Inquire on Messenger"
-                        class="relative flex h-[54px] flex-col items-center justify-center gap-1 overflow-hidden rounded-[1.25rem] bg-gradient-to-br from-[#0084ff] via-[#0b78ff] to-[#0b3a56] text-white shadow-lg shadow-[#0084ff]/25 transition hover:brightness-110 active:scale-95"
+                        class="group relative flex h-[56px] flex-col items-center justify-center gap-1 overflow-hidden rounded-[1.35rem] border border-cyan-200/20 bg-white/15 text-white shadow-inner shadow-white/10 transition hover:bg-white/20 active:scale-95"
                     >
                         <span
-                            class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_0%,rgba(255,255,255,0.38),transparent_34%)]"
+                            class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_0%,rgba(255,255,255,0.30),transparent_36%)]"
                         />
 
                         <span
-                            class="relative z-10 grid h-7 w-7 place-items-center rounded-full bg-white/18"
+                            class="relative z-10 grid h-9 w-9 place-items-center rounded-full border border-cyan-200/30 bg-cyan-100/20 text-cyan-100 shadow-[0_0_18px_rgba(125,211,252,0.20)] transition group-hover:bg-cyan-100/25"
                         >
                             <svg
                                 viewBox="0 0 24 24"
                                 aria-hidden="true"
-                                class="h-[17px] w-[17px]"
+                                class="h-[18px] w-[18px]"
                                 fill="currentColor"
                             >
                                 <path
@@ -2496,6 +2536,11 @@ button:hover .shop-now-icon {
     scroll-margin-top: 92px;
 }
 
+.transaction-section {
+    position: relative;
+    isolation: isolate;
+}
+
 .transaction-strip,
 .about-section-card * {
     scrollbar-width: thin;
@@ -2513,10 +2558,12 @@ button:hover .shop-now-icon {
     border-radius: 999px;
     background: rgba(11, 58, 86, 0.24);
 }
+
 .transaction-carousel {
     scroll-padding-left: 0.25rem;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    overscroll-behavior-x: contain;
 }
 
 .transaction-carousel::-webkit-scrollbar {
@@ -2525,8 +2572,8 @@ button:hover .shop-now-icon {
 
 .transaction-card {
     position: relative;
-    width: 78vw;
-    max-width: 330px;
+    width: 82vw;
+    max-width: 350px;
     flex: 0 0 auto;
     scroll-snap-align: start;
     overflow: hidden;
@@ -2550,22 +2597,56 @@ button:hover .shop-now-icon {
         inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
+.transaction-card-media {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border-radius: 1.85rem;
+    background: #f1f5f9;
+}
+
+.transaction-card-image {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    transition:
+        transform 0.72s ease,
+        filter 0.72s ease;
+}
+
+.transaction-card:hover .transaction-card-image {
+    transform: scale(1.045);
+    filter: saturate(1.05) contrast(1.04);
+}
+
 .transaction-card-overlay {
     position: absolute;
     inset: 0;
     background:
         linear-gradient(
             to top,
-            rgba(0, 0, 0, 0.82) 0%,
-            rgba(0, 0, 0, 0.48) 36%,
-            rgba(0, 0, 0, 0.12) 62%,
-            rgba(0, 0, 0, 0.04) 100%
+            rgba(0, 0, 0, 0.88) 0%,
+            rgba(0, 0, 0, 0.54) 34%,
+            rgba(0, 0, 0, 0.16) 64%,
+            rgba(0, 0, 0, 0.06) 100%
         ),
         radial-gradient(
             circle at 50% 100%,
-            rgba(11, 58, 86, 0.26),
+            rgba(11, 58, 86, 0.32),
             transparent 52%
         );
+}
+
+.transaction-card-topbar {
+    position: absolute;
+    left: 0.9rem;
+    right: 0.9rem;
+    top: 0.9rem;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
 }
 
 .transaction-date-pill,
@@ -2575,15 +2656,17 @@ button:hover .shop-now-icon {
     justify-content: center;
     white-space: nowrap;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.16);
-    padding: 0.55rem 0.8rem;
-    color: rgba(255, 255, 255, 0.88);
-    font-size: 0.62rem;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(7, 25, 35, 0.28);
+    padding: 0.55rem 0.78rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.58rem;
     font-weight: 950;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.11em;
+    line-height: 1;
     text-transform: uppercase;
-    backdrop-filter: blur(16px);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
     box-shadow:
         0 10px 28px rgba(0, 0, 0, 0.16),
         inset 0 1px 0 rgba(255, 255, 255, 0.18);
@@ -2592,6 +2675,51 @@ button:hover .shop-now-icon {
 .transaction-view-pill {
     background: rgba(255, 255, 255, 0.92);
     color: #071923;
+}
+
+.transaction-card-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 22;
+    padding: 1.1rem;
+}
+
+.transaction-card-kicker {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.58rem;
+    font-weight: 950;
+    letter-spacing: 0.2em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.transaction-card-title {
+    display: -webkit-box;
+    margin-top: 0.55rem;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    color: #ffffff;
+    font-size: 1.32rem;
+    font-weight: 950;
+    letter-spacing: -0.045em;
+    line-height: 1.03;
+    text-shadow: 0 4px 18px rgba(0, 0, 0, 0.48);
+}
+
+.transaction-card-caption {
+    display: -webkit-box;
+    margin-top: 0.55rem;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.82rem;
+    font-weight: 650;
+    line-height: 1.45;
+    text-shadow: 0 3px 14px rgba(0, 0, 0, 0.34);
 }
 
 .transaction-arrow {
@@ -2624,12 +2752,20 @@ button:hover .shop-now-icon {
     .transaction-card {
         width: 320px;
     }
+
+    .transaction-card-content {
+        padding: 1.25rem;
+    }
+
+    .transaction-card-title {
+        font-size: 1.45rem;
+    }
 }
 
 @media (min-width: 1024px) {
     .transaction-card {
-        width: 340px;
-        max-width: 340px;
+        width: 350px;
+        max-width: 350px;
     }
 }
 

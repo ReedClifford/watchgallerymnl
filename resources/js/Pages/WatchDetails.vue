@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from "vue";
 import { Head, Link } from "@inertiajs/vue3";
+import { usePageTracker } from "@/Composables/usePageTracker";
 
 const navbarLogo = "/images/WGM.png";
 
@@ -31,6 +32,13 @@ const displayWatchName = computed(() => {
         props.watch.reference_number ||
         "Watch Details"
     );
+});
+
+usePageTracker({
+    pageType: "watch_details",
+    pageTitle:
+        `${props.watch.brand || ""} ${displayWatchName.value || ""}`.trim() ||
+        "Watch Details",
 });
 
 const inclusionText = computed(() => {
@@ -67,14 +75,92 @@ const activeImage = computed(() => {
     return images.value[activeImageIndex.value] ?? null;
 });
 
+const normalizeWatchStatus = (status) => {
+    const normalized = String(status || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[\s-]+/g, "_");
+
+    if (["sold"].includes(normalized)) return "sold";
+    if (["reserved"].includes(normalized)) return "reserved";
+    if (["in_transit", "intransit", "transit"].includes(normalized)) {
+        return "in_transit";
+    }
+
+    return "available";
+};
+
+const watchStatusLabel = (status) => {
+    const normalized = normalizeWatchStatus(status);
+
+    const labels = {
+        available: "Available",
+        reserved: "Reserved",
+        in_transit: "In Transit",
+        sold: "Sold",
+    };
+
+    return labels[normalized] || "Available";
+};
+
+const watchStatusBadgeClass = (status) => {
+    const normalized = normalizeWatchStatus(status);
+
+    const classes = {
+        available: "status-badge-available",
+        reserved: "status-badge-reserved",
+        in_transit: "status-badge-transit",
+        sold: "status-badge-sold",
+    };
+
+    return classes[normalized] || "status-badge-available";
+};
+
+const bottomWatchStatusClass = (status) => {
+    const normalized = normalizeWatchStatus(status);
+
+    const classes = {
+        available: "bottom-watch-status-available",
+        reserved: "bottom-watch-status-reserved",
+        in_transit: "bottom-watch-status-transit",
+        sold: "bottom-watch-status-sold",
+    };
+
+    return classes[normalized] || "bottom-watch-status-available";
+};
+
+const mainWatchStatus = computed(() =>
+    normalizeWatchStatus(props.watch.status),
+);
+const mainWatchStatusLabel = computed(() =>
+    watchStatusLabel(mainWatchStatus.value),
+);
+const mainWatchStatusClass = computed(() =>
+    watchStatusBadgeClass(mainWatchStatus.value),
+);
+const priceLabel = computed(() =>
+    mainWatchStatus.value === "sold" ? "Sold Price" : "Listed Price",
+);
+
 const actualWatchPrice = computed(() => {
-    const candidates = [
-        props.watch.actual_price,
-        props.watch.discounted_price,
-        props.watch.selling_price,
-        props.watch.price,
-        props.watch.display_price,
-    ];
+    const candidates =
+        mainWatchStatus.value === "sold"
+            ? [
+                  props.watch.sold_price,
+                  props.watch.actual_price,
+                  props.watch.display_price,
+                  props.watch.discounted_price,
+                  props.watch.selling_price,
+                  props.watch.price,
+              ]
+            : [
+                  props.watch.actual_price,
+                  props.watch.discounted_price,
+                  props.watch.selling_price,
+                  props.watch.price,
+                  props.watch.display_price,
+                  props.watch.sold_price,
+              ];
 
     return candidates.find((value) => Number(value) > 0) ?? null;
 });
@@ -86,13 +172,26 @@ const suggestedSrp = computed(() => {
 });
 
 const otherWatchPrice = (item) => {
-    const candidates = [
-        item.actual_price,
-        item.display_price,
-        item.discounted_price,
-        item.selling_price,
-        item.price,
-    ];
+    const status = normalizeWatchStatus(item?.status);
+
+    const candidates =
+        status === "sold"
+            ? [
+                  item.sold_price,
+                  item.actual_price,
+                  item.display_price,
+                  item.discounted_price,
+                  item.selling_price,
+                  item.price,
+              ]
+            : [
+                  item.actual_price,
+                  item.display_price,
+                  item.discounted_price,
+                  item.selling_price,
+                  item.price,
+                  item.sold_price,
+              ];
 
     return candidates.find((value) => Number(value) > 0) ?? null;
 };
@@ -396,12 +495,11 @@ const specs = computed(() => {
                                     class="mb-3 flex flex-wrap items-center gap-1.5"
                                 >
                                     <span
-                                        class="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-[8px] font-black uppercase tracking-[0.18em] text-emerald-100 backdrop-blur-xl sm:text-[9px]"
+                                        class="status-badge"
+                                        :class="mainWatchStatusClass"
                                     >
-                                        <span
-                                            class="h-1.5 w-1.5 rounded-full bg-emerald-300"
-                                        ></span>
-                                        Available
+                                        <span class="status-badge-dot"></span>
+                                        {{ mainWatchStatusLabel }}
                                     </span>
 
                                     <span
@@ -519,7 +617,7 @@ const specs = computed(() => {
                                                         <p
                                                             class="text-[8px] font-black uppercase tracking-[0.24em] text-white/40"
                                                         >
-                                                            Listed Price
+                                                            {{ priceLabel }}
                                                         </p>
                                                     </div>
 
@@ -799,8 +897,15 @@ const specs = computed(() => {
                                             {{ conditionLabel(item.condition) }}
                                         </span>
 
-                                        <span class="bottom-watch-pill">
-                                            Available
+                                        <span
+                                            class="bottom-watch-pill"
+                                            :class="
+                                                bottomWatchStatusClass(
+                                                    item.status,
+                                                )
+                                            "
+                                        >
+                                            {{ watchStatusLabel(item.status) }}
                                         </span>
 
                                         <span
@@ -859,6 +964,59 @@ const specs = computed(() => {
 </template>
 
 <style scoped>
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.38rem;
+    border-radius: 999px;
+    padding: 0.42rem 0.72rem;
+    font-size: 0.5rem;
+    font-weight: 950;
+    letter-spacing: 0.18em;
+    line-height: 1;
+    text-transform: uppercase;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.status-badge-dot {
+    height: 0.38rem;
+    width: 0.38rem;
+    border-radius: 999px;
+    background: currentColor;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.12);
+}
+
+.status-badge-available {
+    border: 1px solid rgba(110, 231, 183, 0.24);
+    background: rgba(110, 231, 183, 0.1);
+    color: #a7f3d0;
+}
+
+.status-badge-reserved {
+    border: 1px solid rgba(253, 230, 138, 0.28);
+    background: rgba(245, 158, 11, 0.14);
+    color: #fde68a;
+}
+
+.status-badge-transit {
+    border: 1px solid rgba(186, 230, 253, 0.28);
+    background: rgba(14, 165, 233, 0.14);
+    color: #bae6fd;
+}
+
+.status-badge-sold {
+    border: 1px solid rgba(203, 213, 225, 0.26);
+    background: rgba(15, 23, 42, 0.34);
+    color: #e2e8f0;
+}
+
+@media (min-width: 640px) {
+    .status-badge {
+        font-size: 0.56rem;
+    }
+}
+
 .spec-compact-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -995,6 +1153,42 @@ const specs = computed(() => {
         135deg,
         rgba(11, 58, 86, 0.72),
         rgba(100, 116, 139, 0.46)
+    );
+}
+
+.bottom-watch-status-available {
+    border-color: rgba(110, 231, 183, 0.42);
+    background: linear-gradient(
+        135deg,
+        rgba(5, 150, 105, 0.86),
+        rgba(16, 185, 129, 0.58)
+    );
+}
+
+.bottom-watch-status-reserved {
+    border-color: rgba(253, 230, 138, 0.52);
+    background: linear-gradient(
+        135deg,
+        rgba(180, 83, 9, 0.92),
+        rgba(245, 158, 11, 0.62)
+    );
+}
+
+.bottom-watch-status-transit {
+    border-color: rgba(186, 230, 253, 0.52);
+    background: linear-gradient(
+        135deg,
+        rgba(14, 116, 144, 0.92),
+        rgba(59, 130, 246, 0.58)
+    );
+}
+
+.bottom-watch-status-sold {
+    border-color: rgba(203, 213, 225, 0.52);
+    background: linear-gradient(
+        135deg,
+        rgba(7, 25, 35, 0.95),
+        rgba(51, 65, 85, 0.78)
     );
 }
 

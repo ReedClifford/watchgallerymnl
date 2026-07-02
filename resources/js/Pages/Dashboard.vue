@@ -2,6 +2,7 @@
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 import { Head, Link } from "@inertiajs/vue3";
 import { computed } from "vue";
+import VueApexCharts from "vue3-apexcharts";
 
 const props = defineProps({
     stats: {
@@ -15,6 +16,19 @@ const props = defineProps({
     latestSold: {
         type: Array,
         default: () => [],
+    },
+    analytics: {
+        type: Object,
+        default: () => ({
+            today_valid_visits: 0,
+            today_unique_visitors: 0,
+            today_engaged_visits: 0,
+            average_duration_seconds: 0,
+            total_valid_visits: 0,
+            daily_visits: [],
+            top_watches: [],
+            device_breakdown: [],
+        }),
     },
 });
 
@@ -36,6 +50,30 @@ const formatDate = (value) => {
         month: "short",
         day: "numeric",
     }).format(new Date(value));
+};
+
+const formatDuration = (seconds) => {
+    const totalSeconds = Number(seconds || 0);
+
+    if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) {
+        return "0s";
+    }
+
+    const minutes = Math.floor(totalSeconds / 60);
+    const remainingSeconds = Math.round(totalSeconds % 60);
+
+    if (minutes <= 0) {
+        return `${remainingSeconds}s`;
+    }
+
+    if (minutes < 60) {
+        return `${minutes}m ${remainingSeconds}s`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+
+    return `${hours}h ${remainingMinutes}m`;
 };
 
 const totalWatches = computed(() => Number(props.stats.total_watches || 0));
@@ -149,6 +187,465 @@ const moneyCards = computed(() => [
         card: "border-slate-200 bg-white shadow-[#0b3a56]/10",
         iconClass: "bg-slate-100 text-[#071923]",
         accent: "from-slate-200 via-slate-300 to-slate-400",
+    },
+]);
+
+const analytics = computed(() => props.analytics || {});
+
+const todayValidVisits = computed(() =>
+    Number(analytics.value.today_valid_visits || 0),
+);
+
+const todayUniqueVisitors = computed(() =>
+    Number(analytics.value.today_unique_visitors || 0),
+);
+
+const todayEngagedVisits = computed(() =>
+    Number(analytics.value.today_engaged_visits || 0),
+);
+
+const averageDurationSeconds = computed(() =>
+    Number(analytics.value.average_duration_seconds || 0),
+);
+
+const totalValidVisits = computed(() =>
+    Number(analytics.value.total_valid_visits || 0),
+);
+
+const engagementRate = computed(() => {
+    if (!todayValidVisits.value) return 0;
+
+    return Math.round(
+        (todayEngagedVisits.value / todayValidVisits.value) * 100,
+    );
+});
+
+const uniqueVisitorRate = computed(() => {
+    if (!todayValidVisits.value) return 0;
+
+    return Math.round(
+        (todayUniqueVisitors.value / todayValidVisits.value) * 100,
+    );
+});
+
+const dailyVisits = computed(() => analytics.value.daily_visits || []);
+const topWatches = computed(() => analytics.value.top_watches || []);
+const deviceBreakdown = computed(() => analytics.value.device_breakdown || []);
+
+const chartFontFamily =
+    "Figtree, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+
+const truncateChartLabel = (value, limit = 28) => {
+    const text = String(value || "").trim();
+
+    if (text.length <= limit) {
+        return text;
+    }
+
+    return `${text.slice(0, limit - 1)}…`;
+};
+
+const dailyVisitsChartSeries = computed(() => [
+    {
+        name: "Valid Visits",
+        data: dailyVisits.value.map((day) => Number(day.visits || 0)),
+    },
+    {
+        name: "Unique Visitors",
+        data: dailyVisits.value.map((day) => Number(day.unique_visitors || 0)),
+    },
+]);
+
+const dailyVisitsChartOptions = computed(() => ({
+    chart: {
+        type: "area",
+        toolbar: { show: false },
+        zoom: { enabled: false },
+        fontFamily: chartFontFamily,
+        parentHeightOffset: 0,
+    },
+    colors: ["#0b3a56", "#38bdf8"],
+    dataLabels: { enabled: false },
+    stroke: {
+        curve: "smooth",
+        width: 3,
+    },
+    fill: {
+        type: "gradient",
+        gradient: {
+            shadeIntensity: 1,
+            opacityFrom: 0.32,
+            opacityTo: 0.04,
+            stops: [0, 90, 100],
+        },
+    },
+    grid: {
+        borderColor: "#e2e8f0",
+        strokeDashArray: 4,
+        padding: { left: 8, right: 18 },
+    },
+    markers: {
+        size: 4,
+        strokeWidth: 0,
+        hover: { size: 6 },
+    },
+    xaxis: {
+        categories: dailyVisits.value.map((day) => day.label || day.date),
+        axisBorder: { show: false },
+        axisTicks: { show: false },
+        labels: {
+            style: {
+                colors: "#64748b",
+                fontSize: "11px",
+                fontWeight: 800,
+            },
+        },
+    },
+    yaxis: {
+        min: 0,
+        forceNiceScale: true,
+        labels: {
+            formatter: (value) => Math.round(Number(value || 0)),
+            style: {
+                colors: "#64748b",
+                fontSize: "11px",
+                fontWeight: 800,
+            },
+        },
+    },
+    legend: {
+        position: "top",
+        horizontalAlign: "right",
+        fontWeight: 900,
+        markers: { radius: 12 },
+    },
+    tooltip: {
+        theme: "light",
+        y: {
+            formatter: (value) => `${Math.round(Number(value || 0))} visits`,
+        },
+    },
+    noData: {
+        text: "No traffic data yet",
+    },
+    responsive: [
+        {
+            breakpoint: 640,
+            options: {
+                chart: { height: 245 },
+                stroke: { width: 2 },
+                markers: { size: 3 },
+                legend: {
+                    position: "bottom",
+                    horizontalAlign: "center",
+                    fontSize: "11px",
+                },
+                grid: {
+                    padding: { left: 0, right: 6 },
+                },
+                xaxis: {
+                    labels: {
+                        rotate: -20,
+                        style: { fontSize: "10px" },
+                    },
+                },
+                yaxis: {
+                    labels: {
+                        style: { fontSize: "10px" },
+                    },
+                },
+            },
+        },
+    ],
+}));
+
+const qualityChartSeries = computed(() => [
+    engagementRate.value,
+    uniqueVisitorRate.value,
+]);
+
+const qualityChartOptions = computed(() => ({
+    chart: {
+        type: "radialBar",
+        toolbar: { show: false },
+        fontFamily: chartFontFamily,
+        parentHeightOffset: 0,
+    },
+    labels: ["Engaged visits", "Unique visits"],
+    colors: ["#0b3a56", "#38bdf8"],
+    stroke: { lineCap: "round" },
+    plotOptions: {
+        radialBar: {
+            hollow: { size: "42%" },
+            track: { background: "#e2e8f0" },
+            dataLabels: {
+                name: {
+                    fontSize: "12px",
+                    fontWeight: 900,
+                    color: "#64748b",
+                },
+                value: {
+                    fontSize: "22px",
+                    fontWeight: 950,
+                    color: "#071923",
+                    formatter: (value) => `${Math.round(Number(value || 0))}%`,
+                },
+                total: {
+                    show: true,
+                    label: "Quality",
+                    color: "#64748b",
+                    formatter: () => `${engagementRate.value}%`,
+                },
+            },
+        },
+    },
+    legend: {
+        show: true,
+        position: "bottom",
+        fontWeight: 900,
+        markers: { radius: 12 },
+    },
+    responsive: [
+        {
+            breakpoint: 640,
+            options: {
+                chart: { height: 225 },
+                plotOptions: {
+                    radialBar: {
+                        hollow: { size: "36%" },
+                        dataLabels: {
+                            value: { fontSize: "18px" },
+                            total: { show: true },
+                        },
+                    },
+                },
+                legend: { fontSize: "11px" },
+            },
+        },
+    ],
+}));
+
+const deviceChartSeries = computed(() =>
+    deviceBreakdown.value.map((device) => Number(device.visits || 0)),
+);
+
+const deviceChartOptions = computed(() => ({
+    chart: {
+        type: "donut",
+        toolbar: { show: false },
+        fontFamily: chartFontFamily,
+        parentHeightOffset: 0,
+    },
+    labels: deviceBreakdown.value.map((device) =>
+        String(device.device || "Unknown")
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (letter) => letter.toUpperCase()),
+    ),
+    colors: ["#0b3a56", "#38bdf8", "#071923", "#94a3b8"],
+    stroke: {
+        colors: ["#ffffff"],
+        width: 4,
+    },
+    dataLabels: {
+        enabled: true,
+        formatter: (value) => `${Math.round(Number(value || 0))}%`,
+        style: {
+            fontSize: "12px",
+            fontWeight: 900,
+        },
+    },
+    plotOptions: {
+        pie: {
+            donut: {
+                size: "68%",
+                labels: {
+                    show: true,
+                    name: {
+                        show: true,
+                        fontWeight: 900,
+                        color: "#64748b",
+                    },
+                    value: {
+                        show: true,
+                        fontWeight: 950,
+                        color: "#071923",
+                        formatter: (value) => `${value} visits`,
+                    },
+                    total: {
+                        show: true,
+                        label: "Today",
+                        color: "#64748b",
+                        formatter: () => `${todayValidVisits.value}`,
+                    },
+                },
+            },
+        },
+    },
+    legend: {
+        position: "bottom",
+        fontWeight: 900,
+        markers: { radius: 12 },
+    },
+    tooltip: {
+        y: {
+            formatter: (value) => `${value} visits`,
+        },
+    },
+    noData: {
+        text: "No device data yet",
+    },
+    responsive: [
+        {
+            breakpoint: 640,
+            options: {
+                chart: { height: 230 },
+                dataLabels: { enabled: false },
+                legend: {
+                    position: "bottom",
+                    fontSize: "11px",
+                },
+                plotOptions: {
+                    pie: { donut: { size: "72%" } },
+                },
+            },
+        },
+    ],
+}));
+
+const topWatchesChartSeries = computed(() => [
+    {
+        name: "Views",
+        data: topWatches.value.map((watch) => Number(watch.visits || 0)),
+    },
+]);
+
+const topWatchesChartOptions = computed(() => ({
+    chart: {
+        type: "bar",
+        toolbar: { show: false },
+        fontFamily: chartFontFamily,
+        parentHeightOffset: 0,
+    },
+    colors: ["#0b3a56"],
+    plotOptions: {
+        bar: {
+            horizontal: true,
+            borderRadius: 8,
+            barHeight: "58%",
+        },
+    },
+    dataLabels: {
+        enabled: true,
+        formatter: (value) => Math.round(Number(value || 0)),
+        style: {
+            fontSize: "11px",
+            fontWeight: 900,
+        },
+    },
+    grid: {
+        borderColor: "#e2e8f0",
+        strokeDashArray: 4,
+    },
+    xaxis: {
+        categories: topWatches.value.map((watch) =>
+            truncateChartLabel(watch.page_title || watch.page_path, 34),
+        ),
+        labels: {
+            formatter: (value) => Math.round(Number(value || 0)),
+            style: {
+                colors: "#64748b",
+                fontSize: "11px",
+                fontWeight: 800,
+            },
+        },
+    },
+    yaxis: {
+        labels: {
+            style: {
+                colors: "#071923",
+                fontSize: "11px",
+                fontWeight: 900,
+            },
+        },
+    },
+    tooltip: {
+        y: {
+            formatter: (value) => `${value} views`,
+        },
+    },
+    noData: {
+        text: "No viewed watches yet",
+    },
+    responsive: [
+        {
+            breakpoint: 640,
+            options: {
+                chart: { height: 260 },
+                plotOptions: {
+                    bar: {
+                        borderRadius: 6,
+                        barHeight: "50%",
+                    },
+                },
+                dataLabels: {
+                    enabled: false,
+                },
+                xaxis: {
+                    labels: {
+                        style: { fontSize: "10px" },
+                    },
+                },
+                yaxis: {
+                    labels: {
+                        maxWidth: 120,
+                        style: { fontSize: "10px" },
+                    },
+                },
+            },
+        },
+    ],
+}));
+
+const analyticsCards = computed(() => [
+    {
+        label: "Today Visits",
+        value: todayValidVisits.value,
+        helper: "Valid visits after 5 seconds",
+        icon: "↗",
+        tone: "text-[#071923]",
+        card: "border-slate-200 bg-white shadow-[#0b3a56]/10",
+        iconClass: "bg-[#eef8fb] text-[#0b3a56]",
+        accent: "from-[#061725] via-[#0b3a56] to-[#071923]",
+    },
+    {
+        label: "Unique Visitors",
+        value: todayUniqueVisitors.value,
+        helper: "Unique browser/device today",
+        icon: "◎",
+        tone: "text-[#0b3a56]",
+        card: "border-[#0b3a56]/10 bg-[#eef8fb] shadow-[#0b3a56]/10",
+        iconClass: "bg-white text-[#0b3a56]",
+        accent: "from-[#061725] via-[#0b3a56] to-[#071923]",
+    },
+    {
+        label: "Avg. Time",
+        value: formatDuration(averageDurationSeconds.value),
+        helper: "Average active page time",
+        icon: "◷",
+        tone: "text-[#071923]",
+        card: "border-slate-200 bg-white shadow-[#0b3a56]/10",
+        iconClass: "bg-slate-100 text-[#071923]",
+        accent: "from-slate-200 via-slate-300 to-slate-400",
+    },
+    {
+        label: "Engaged",
+        value: todayEngagedVisits.value,
+        helper: "10s+ or clicked/scrolled",
+        icon: "◆",
+        tone: "text-[#071923]",
+        card: "border-slate-200 bg-white shadow-[#0b3a56]/10",
+        iconClass: "bg-[#071923] text-white",
+        accent: "from-[#061725] via-[#0b3a56] to-[#071923]",
     },
 ]);
 
@@ -372,8 +869,317 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                     </div>
                 </section>
 
+                <!-- Mobile-friendly Dashboard Navigation -->
+                <nav
+                    class="sticky top-3 z-30 mb-5 overflow-x-auto rounded-[1.35rem] border border-white/80 bg-white/90 p-2 shadow-xl shadow-[#0b3a56]/10 backdrop-blur-2xl sm:top-4"
+                >
+                    <div class="flex min-w-max gap-2">
+                        <a
+                            href="#dashboard-analytics"
+                            class="rounded-full bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-[#0b3a56]/15 active:scale-95"
+                        >
+                            Analytics
+                        </a>
+                        <a
+                            href="#dashboard-inventory"
+                            class="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-600 transition hover:border-[#0b3a56]/30 hover:bg-[#eef8fb] hover:text-[#0b3a56] active:scale-95"
+                        >
+                            Inventory
+                        </a>
+                        <a
+                            href="#dashboard-sales"
+                            class="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-600 transition hover:border-[#0b3a56]/30 hover:bg-[#eef8fb] hover:text-[#0b3a56] active:scale-95"
+                        >
+                            Sales
+                        </a>
+                        <a
+                            href="#dashboard-performance"
+                            class="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-600 transition hover:border-[#0b3a56]/30 hover:bg-[#eef8fb] hover:text-[#0b3a56] active:scale-95"
+                        >
+                            Performance
+                        </a>
+                    </div>
+                </nav>
+
+                <!-- Website Analytics: Top Overview -->
+                <section
+                    id="dashboard-analytics"
+                    class="mb-5 scroll-mt-24 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-2xl shadow-[#0b3a56]/10"
+                >
+                    <div
+                        class="relative overflow-hidden bg-gradient-to-br from-[#061725] via-[#0b3a56] to-[#071923] p-5 text-white sm:p-6 lg:p-7"
+                    >
+                        <div
+                            class="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-cyan-300/10 blur-3xl"
+                        />
+                        <div
+                            class="pointer-events-none absolute bottom-0 left-10 h-40 w-40 rounded-full bg-white/10 blur-3xl"
+                        />
+
+                        <div
+                            class="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
+                        >
+                            <div>
+                                <div
+                                    class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-white/75 backdrop-blur"
+                                >
+                                    Website Analytics
+                                </div>
+
+                                <h3
+                                    class="mt-4 max-w-2xl text-2xl font-black tracking-tight text-white sm:text-3xl"
+                                >
+                                    Traffic, interest, and visitor behavior
+                                </h3>
+
+                                <p
+                                    class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300"
+                                >
+                                    Valid visits are counted after 5 seconds.
+                                    Engaged visits mean the visitor stayed 10+
+                                    seconds or interacted with the page.
+                                </p>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 sm:flex">
+                                <div
+                                    class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur"
+                                >
+                                    <p
+                                        class="text-[10px] font-black uppercase tracking-[0.2em] text-white/55"
+                                    >
+                                        All-time valid
+                                    </p>
+                                    <p
+                                        class="mt-1 text-xl font-black text-white"
+                                    >
+                                        {{ totalValidVisits }}
+                                    </p>
+                                </div>
+
+                                <div
+                                    class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur"
+                                >
+                                    <p
+                                        class="text-[10px] font-black uppercase tracking-[0.2em] text-white/55"
+                                    >
+                                        Engaged rate
+                                    </p>
+                                    <p
+                                        class="mt-1 text-xl font-black text-white"
+                                    >
+                                        {{ engagementRate }}%
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 sm:p-5 lg:p-6">
+                        <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                            <div
+                                v-for="card in analyticsCards"
+                                :key="card.label"
+                                class="relative overflow-hidden rounded-[1.5rem] border p-4 shadow-lg"
+                                :class="card.card"
+                            >
+                                <div
+                                    class="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r"
+                                    :class="card.accent"
+                                />
+
+                                <div
+                                    class="flex items-start justify-between gap-3 pt-1"
+                                >
+                                    <div>
+                                        <p
+                                            class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400"
+                                        >
+                                            {{ card.label }}
+                                        </p>
+
+                                        <p
+                                            class="mt-3 text-2xl font-black sm:text-3xl"
+                                            :class="card.tone"
+                                        >
+                                            {{ card.value }}
+                                        </p>
+
+                                        <p class="mt-1 text-xs text-slate-500">
+                                            {{ card.helper }}
+                                        </p>
+                                    </div>
+
+                                    <div
+                                        class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-base font-black"
+                                        :class="card.iconClass"
+                                    >
+                                        {{ card.icon }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="mt-5 grid gap-5 xl:grid-cols-[1.15fr_.85fr]"
+                        >
+                            <!-- 7-day Traffic Chart -->
+                            <section
+                                class="rounded-[1.75rem] border border-slate-200 bg-[#f8fafc] p-4 shadow-sm sm:p-5"
+                            >
+                                <div
+                                    class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between"
+                                >
+                                    <div>
+                                        <p
+                                            class="text-[10px] font-black uppercase tracking-[0.28em] text-[#0b3a56]"
+                                        >
+                                            Traffic Trend
+                                        </p>
+                                        <h4
+                                            class="mt-1 text-lg font-black text-[#071923]"
+                                        >
+                                            Last 7 days valid visits
+                                        </h4>
+                                    </div>
+
+                                    <span
+                                        class="rounded-full bg-white px-3 py-1.5 text-[11px] font-black text-slate-500 shadow-sm"
+                                    >
+                                        7-day view
+                                    </span>
+                                </div>
+
+                                <div
+                                    class="mt-5 overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white p-2 sm:p-4"
+                                >
+                                    <VueApexCharts
+                                        type="area"
+                                        height="270"
+                                        :options="dailyVisitsChartOptions"
+                                        :series="dailyVisitsChartSeries"
+                                    />
+                                </div>
+                            </section>
+
+                            <!-- Quality + Device Charts -->
+                            <section class="grid gap-5">
+                                <div
+                                    class="rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
+                                >
+                                    <p
+                                        class="text-[10px] font-black uppercase tracking-[0.28em] text-[#0b3a56]"
+                                    >
+                                        Visit Quality
+                                    </p>
+                                    <h4
+                                        class="mt-1 text-lg font-black text-[#071923]"
+                                    >
+                                        Engaged vs unique visits
+                                    </h4>
+                                    <p
+                                        class="mt-1 text-xs font-semibold leading-relaxed text-slate-500"
+                                    >
+                                        Engaged rate shows how many valid visits
+                                        stayed longer or interacted. Unique
+                                        visits show how much of today's traffic
+                                        came from different browsers.
+                                    </p>
+
+                                    <div
+                                        class="mt-4 rounded-[1.5rem] border border-slate-100 bg-slate-50 p-2 sm:p-3"
+                                    >
+                                        <VueApexCharts
+                                            type="radialBar"
+                                            height="230"
+                                            :options="qualityChartOptions"
+                                            :series="qualityChartSeries"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div
+                                    class="rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
+                                >
+                                    <div
+                                        class="flex items-center justify-between gap-3"
+                                    >
+                                        <div>
+                                            <p
+                                                class="text-[10px] font-black uppercase tracking-[0.28em] text-[#0b3a56]"
+                                            >
+                                                Devices
+                                            </p>
+                                            <h4
+                                                class="mt-1 text-lg font-black text-[#071923]"
+                                            >
+                                                Mobile vs desktop
+                                            </h4>
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        class="mt-4 overflow-hidden rounded-[1.5rem] border border-slate-100 bg-slate-50 p-2 sm:p-3"
+                                    >
+                                        <VueApexCharts
+                                            type="donut"
+                                            height="230"
+                                            :options="deviceChartOptions"
+                                            :series="deviceChartSeries"
+                                        />
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="mt-5">
+                            <!-- Most Viewed Watches -->
+                            <section
+                                class="rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
+                            >
+                                <div
+                                    class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"
+                                >
+                                    <div>
+                                        <p
+                                            class="text-[10px] font-black uppercase tracking-[0.28em] text-[#0b3a56]"
+                                        >
+                                            Product Interest
+                                        </p>
+                                        <h4
+                                            class="mt-1 text-lg font-black text-[#071923]"
+                                        >
+                                            Most viewed watches
+                                        </h4>
+                                        <p
+                                            class="mt-1 text-xs font-semibold text-slate-500"
+                                        >
+                                            Shows which watch detail pages get
+                                            the most valid views.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div
+                                    class="mt-4 overflow-hidden rounded-[1.5rem] border border-slate-100 bg-slate-50 p-2 sm:p-3"
+                                >
+                                    <VueApexCharts
+                                        type="bar"
+                                        height="300"
+                                        :options="topWatchesChartOptions"
+                                        :series="topWatchesChartSeries"
+                                    />
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- Inventory Stats -->
-                <section class="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <section
+                    id="dashboard-inventory"
+                    class="mb-5 grid scroll-mt-24 grid-cols-2 gap-3 lg:grid-cols-4"
+                >
                     <div
                         v-for="card in statCards"
                         :key="card.label"
@@ -418,7 +1224,10 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                 </section>
 
                 <!-- Money Stats -->
-                <section class="mb-5 grid gap-3 lg:grid-cols-3">
+                <section
+                    id="dashboard-sales"
+                    class="mb-5 grid scroll-mt-24 gap-3 lg:grid-cols-3"
+                >
                     <div
                         v-for="card in moneyCards"
                         :key="card.label"
@@ -463,7 +1272,10 @@ const topSeller = computed(() => props.bestSellers?.[0] ?? null);
                 </section>
 
                 <!-- Performance Summary -->
-                <section class="mb-5 grid gap-3 lg:grid-cols-3">
+                <section
+                    id="dashboard-performance"
+                    class="mb-5 grid scroll-mt-24 gap-3 lg:grid-cols-3"
+                >
                     <div
                         class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-xl shadow-[#0b3a56]/10"
                     >
