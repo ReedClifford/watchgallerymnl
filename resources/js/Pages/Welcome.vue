@@ -2089,7 +2089,7 @@ const messengerLink = (watch = null) => {
                 class="relative mx-auto max-w-[420px] overflow-hidden rounded-[1.85rem] border border-white/15 bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] p-1.5 shadow-[0_18px_50px_rgba(2,8,23,0.38)] ring-1 ring-white/10 backdrop-blur-2xl"
             >
                 <div
-                    class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(96,165,250,0.30),transparent_35%),radial-gradient(circle_at_85%_0%,rgba(34,211,238,0.18),transparent_36%)]"
+                    class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(255,255,255,0.16),transparent_35%),radial-gradient(circle_at_85%_0%,rgba(0,132,255,0.22),transparent_38%)]"
                 />
 
                 <div
@@ -2099,10 +2099,10 @@ const messengerLink = (watch = null) => {
                     <button
                         type="button"
                         @click.prevent.stop="scrollToShop"
-                        class="group flex h-[56px] flex-col items-center justify-center gap-1 rounded-[1.35rem] text-white/75 transition hover:bg-white/10 hover:text-white active:scale-95"
+                        class="group flex h-[56px] flex-col items-center justify-center gap-1 rounded-[1.35rem] text-white transition hover:bg-white/10 active:scale-95"
                         :class="
                             shopOpened
-                                ? 'bg-white/15 text-white ring-1 ring-cyan-200/25 shadow-inner shadow-white/10'
+                                ? 'bg-white/15 ring-1 ring-white/25 shadow-inner shadow-white/10'
                                 : ''
                         "
                     >
@@ -2110,8 +2110,8 @@ const messengerLink = (watch = null) => {
                             class="grid h-9 w-9 place-items-center rounded-full border transition"
                             :class="
                                 shopOpened
-                                    ? 'border-cyan-200/35 bg-cyan-100/20 text-cyan-100 shadow-[0_0_18px_rgba(125,211,252,0.22)]'
-                                    : 'border-white/10 bg-white/10 text-cyan-100/80 group-hover:border-white/20 group-hover:bg-white/15 group-hover:text-white'
+                                    ? 'border-white/35 bg-white/20 text-white shadow-[0_0_18px_rgba(255,255,255,0.16)]'
+                                    : 'border-white/15 bg-white/10 text-white group-hover:border-white/25 group-hover:bg-white/15'
                             "
                         >
                             <svg
@@ -2155,7 +2155,9 @@ const messengerLink = (watch = null) => {
                             </svg>
                         </span>
 
-                        <span class="text-[10px] font-black leading-none">
+                        <span
+                            class="text-[10px] font-black leading-none text-white"
+                        >
                             Catalog
                         </span>
                     </button>
@@ -2164,10 +2166,10 @@ const messengerLink = (watch = null) => {
                         v-if="hasAboutUs"
                         type="button"
                         @click="scrollToAbout"
-                        class="group flex h-[56px] flex-col items-center justify-center gap-1 rounded-[1.35rem] text-white/75 transition hover:bg-white/10 hover:text-white active:scale-95"
+                        class="group flex h-[56px] flex-col items-center justify-center gap-1 rounded-[1.35rem] text-white transition hover:bg-white/10 active:scale-95"
                     >
                         <span
-                            class="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/10 text-sky-100/80 transition group-hover:border-white/20 group-hover:bg-white/15 group-hover:text-white"
+                            class="grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-white/10 text-white transition group-hover:border-white/25 group-hover:bg-white/15"
                         >
                             <svg
                                 viewBox="0 0 24 24"
@@ -2185,7 +2187,9 @@ const messengerLink = (watch = null) => {
                             </svg>
                         </span>
 
-                        <span class="text-[10px] font-black leading-none">
+                        <span
+                            class="text-[10px] font-black leading-none text-white"
+                        >
                             About
                         </span>
                     </button>
@@ -2195,14 +2199,14 @@ const messengerLink = (watch = null) => {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Inquire on Messenger"
-                        class="group relative flex h-[56px] flex-col items-center justify-center gap-1 overflow-hidden rounded-[1.35rem] border border-cyan-200/20 bg-white/15 text-white shadow-inner shadow-white/10 transition hover:bg-white/20 active:scale-95"
+                        class="group relative flex h-[56px] flex-col items-center justify-center gap-1 overflow-hidden rounded-[1.35rem] border border-[#7dd3fc]/45 bg-gradient-to-r from-[#0084ff] via-[#0b78ff] to-[#006aff] text-white shadow-[0_12px_30px_rgba(0,132,255,0.38)] ring-1 ring-white/15 transition hover:brightness-110 active:scale-95"
                     >
                         <span
-                            class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_0%,rgba(255,255,255,0.30),transparent_36%)]"
+                            class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_0%,rgba(255,255,255,0.42),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.16),transparent_48%)]"
                         />
 
                         <span
-                            class="relative z-10 grid h-9 w-9 place-items-center rounded-full border border-cyan-200/30 bg-cyan-100/20 text-cyan-100 shadow-[0_0_18px_rgba(125,211,252,0.20)] transition group-hover:bg-cyan-100/25"
+                            class="relative z-10 grid h-9 w-9 place-items-center rounded-full border border-white/25 bg-white/20 text-white shadow-[0_0_18px_rgba(255,255,255,0.18)] transition group-hover:bg-white/25"
                         >
                             <svg
                                 viewBox="0 0 24 24"
@@ -2217,7 +2221,7 @@ const messengerLink = (watch = null) => {
                         </span>
 
                         <span
-                            class="relative z-10 text-[10px] font-black leading-none"
+                            class="relative z-10 text-[10px] font-black leading-none text-white"
                         >
                             Message
                         </span>
