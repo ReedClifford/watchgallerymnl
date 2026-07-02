@@ -2612,14 +2612,14 @@ button:hover .shop-now-icon {
     background:
         linear-gradient(
             to top,
-            rgba(0, 0, 0, 0.58) 0%,
-            rgba(0, 0, 0, 0.3) 34%,
-            rgba(0, 0, 0, 0.1) 64%,
-            rgba(0, 0, 0, 0.02) 100%
+            rgba(0, 0, 0, 0.5) 0%,
+            rgba(0, 0, 0, 0.24) 34%,
+            rgba(0, 0, 0, 0.08) 64%,
+            rgba(0, 0, 0, 0.01) 100%
         ),
         radial-gradient(
             circle at 50% 100%,
-            rgba(11, 58, 86, 0.18),
+            rgba(11, 58, 86, 0.12),
             transparent 52%
         );
 }
