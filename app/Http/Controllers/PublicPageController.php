@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AboutUsContent;
 use App\Models\Watch;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -162,7 +163,7 @@ class PublicPageController extends Controller
         return Inertia::render('Welcome', [
             'heroWatches' => $heroWatches,
             'watches' => $watches,
-            'transactions' => $this->visibleSoldWatches(),
+            'transactions' => $this->visibleTransactions(),
             'aboutUs' => $this->aboutUsContent(),
             'availableCount' => Watch::query()
                 ->where('status', 'available')
@@ -296,30 +297,75 @@ class PublicPageController extends Controller
         ];
     }
 
-    private function visibleSoldWatches()
+    private function visibleTransactions()
     {
-        return Watch::query()
-            ->with($this->watchCardRelations())
-            ->where('status', 'sold')
-            ->where('is_visible', true)
-            ->latest('date_sold')
-            ->latest('id')
+        if (! Schema::hasTable('transactions') || ! Schema::hasTable('transaction_images')) {
+            return collect();
+        }
+
+        $query = DB::table('transactions')
+            ->select('transactions.*');
+
+        if (Schema::hasColumn('transactions', 'is_visible')) {
+            $query->where('is_visible', true);
+        }
+
+        if (Schema::hasColumn('transactions', 'transaction_date')) {
+            $query->orderByDesc('transaction_date');
+        } elseif (Schema::hasColumn('transactions', 'created_at')) {
+            $query->orderByDesc('created_at');
+        }
+
+        $transactions = $query
+            ->orderByDesc('id')
             ->limit(12)
+            ->get();
+
+        if ($transactions->isEmpty()) {
+            return collect();
+        }
+
+        $transactionIds = $transactions->pluck('id')->filter()->values();
+
+        $imageQuery = DB::table('transaction_images')
+            ->whereIn('transaction_id', $transactionIds)
+            ->whereNotNull('image_path')
+            ->where('image_path', '!=', '');
+
+        if (Schema::hasColumn('transaction_images', 'is_primary')) {
+            $imageQuery->orderByDesc('is_primary');
+        }
+
+        if (Schema::hasColumn('transaction_images', 'sort_order')) {
+            $imageQuery->orderBy('sort_order');
+        }
+
+        $transactionImages = $imageQuery
+            ->orderBy('id')
             ->get()
-            ->map(function (Watch $watch) {
-                $displayName = $this->watchDisplayName($watch);
+            ->groupBy('transaction_id');
+
+        return $transactions
+            ->map(function ($transaction) use ($transactionImages) {
+                $image = $transactionImages
+                    ->get($transaction->id, collect())
+                    ->first();
 
                 return [
-                    'id' => $watch->id,
-                    'watch_id' => $watch->id,
-                    'title' => $displayName,
-                    'caption' => trim((string) ($watch->brand ?: '')) ?: 'Thank you for trusting Watch Gallery Manila.',
-                    'transaction_date' => $watch->date_sold ?: $watch->created_at,
-                    'status' => 'sold',
-                    'status_label' => 'Sold',
-                    'image_url' => $this->watchImageUrl($watch),
+                    'id' => $transaction->id,
+                    'title' => filled($transaction->title ?? null)
+                        ? $transaction->title
+                        : 'Successful Transaction',
+                    'caption' => filled($transaction->caption ?? null)
+                        ? $transaction->caption
+                        : 'Thank you for trusting Watch Gallery Manila.',
+                    'transaction_date' => $transaction->transaction_date
+                        ?? $transaction->created_at
+                        ?? null,
+                    'image_url' => $this->storageUrl($image->image_path ?? null),
                 ];
             })
+            ->filter(fn ($transaction) => filled($transaction['image_url']))
             ->values();
     }
 
