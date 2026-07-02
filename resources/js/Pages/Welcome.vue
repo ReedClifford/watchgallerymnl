@@ -1737,24 +1737,7 @@ const messengerLink = (watch = null) => {
 
                                     <div class="transaction-card-overlay" />
 
-                                    <div class="transaction-card-topbar">
-                                        <span
-                                            v-if="transaction.transaction_date"
-                                            class="transaction-date-pill"
-                                        >
-                                            {{
-                                                formatDate(
-                                                    transaction.transaction_date,
-                                                )
-                                            }}
-                                        </span>
-                                    </div>
-
                                     <div class="transaction-card-content">
-                                        <p class="transaction-card-kicker">
-                                            Watch Gallery Manila
-                                        </p>
-
                                         <h3 class="transaction-card-title">
                                             {{
                                                 transaction.title ||
