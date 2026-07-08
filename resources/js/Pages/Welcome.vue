@@ -160,7 +160,7 @@ watch(
     { deep: true },
 );
 
-const shopOpened = ref(false);
+const shopOpened = ref(true);
 const isShopTransitioning = ref(false);
 const heroTransitionDirection = ref(null);
 const aboutSlideIndex = ref(0);
