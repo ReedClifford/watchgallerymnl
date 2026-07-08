@@ -842,10 +842,14 @@ const messengerLink = (watch = null) => {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Inquire on Messenger"
-                        class="group relative flex h-[56px] flex-col items-center justify-center gap-1 overflow-hidden rounded-[1.35rem] border border-white/20 bg-[linear-gradient(135deg,#4ca3ff_0%,#2f7dff_48%,#3267ff_100%)] text-white shadow-[0_14px_34px_rgba(47,125,255,0.45)] ring-1 ring-white/20 transition hover:brightness-110 active:scale-95"
+                        class="group relative inline-flex h-11 items-center justify-center gap-2 overflow-hidden rounded-full border border-[#7dd3fc]/35 bg-gradient-to-r from-[#0084ff] via-[#0b78ff] to-[#006aff] px-4 text-sm font-black text-white shadow-[0_10px_24px_rgba(0,132,255,0.32)] ring-1 ring-white/15 transition hover:-translate-y-0.5 hover:brightness-110 active:scale-95"
                     >
                         <span
-                            class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_0%,rgba(255,255,255,0.42),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.16),transparent_48%)]"
+                            class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_0%,rgba(255,255,255,0.38),transparent_36%),linear-gradient(135deg,rgba(255,255,255,0.14),transparent_52%)]"
+                        />
+
+                        <span
+                            class="relative z-10 grid h-7 w-7 place-items-center rounded-full border border-white/25 bg-white/18 text-white shadow-[0_0_14px_rgba(255,255,255,0.14)]"
                         >
                             <svg
                                 viewBox="0 0 24 24"
@@ -859,7 +863,9 @@ const messengerLink = (watch = null) => {
                             </svg>
                         </span>
 
-                        <span>Messenger</span>
+                        <span class="relative z-10 whitespace-nowrap">
+                            Messenger
+                        </span>
                     </a>
                 </nav>
 
