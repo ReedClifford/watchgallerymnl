@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { Head, Link, router } from "@inertiajs/vue3";
 import { usePageTracker } from "@/Composables/usePageTracker";
 
@@ -533,6 +533,27 @@ const scrollToElement = (id, offset = 86, behavior = "smooth") => {
     });
 };
 
+const isMobileViewport = () => {
+    return (
+        typeof window !== "undefined" &&
+        window.matchMedia("(max-width: 639px)").matches
+    );
+};
+
+const scrollToWatchGrid = (behavior = "smooth") => {
+    scrollToElement("watch-grid-start", isMobileViewport() ? 86 : 96, behavior);
+};
+
+onMounted(async () => {
+    if (!shopOpened.value || !isMobileViewport()) return;
+
+    await nextTick();
+
+    window.setTimeout(() => {
+        scrollToWatchGrid("auto");
+    }, 180);
+});
+
 const filterPayload = () => {
     return {
         search: search.value?.trim() || undefined,
@@ -635,6 +656,11 @@ const clearFilterPill = (type) => {
 const scrollToShopTop = (behavior = "smooth") => {
     window.setTimeout(() => {
         requestAnimationFrame(() => {
+            if (isMobileViewport()) {
+                scrollToWatchGrid(behavior);
+                return;
+            }
+
             scrollToElement("shop-section", 78, behavior);
         });
     }, 80);
@@ -683,6 +709,11 @@ const scrollToShop = async (event = null) => {
     await nextTick();
 
     window.setTimeout(() => {
+        if (isMobileViewport()) {
+            scrollToWatchGrid("smooth");
+            return;
+        }
+
         scrollToElement("shop-section", 78, "smooth");
     }, 60);
 
@@ -1435,6 +1466,12 @@ const messengerLink = (watch = null) => {
 
                         <!-- Full Image Watch Cards -->
                         <!-- Full Image Watch Cards -->
+                        <div
+                            id="watch-grid-start"
+                            class="h-px scroll-mt-[92px] sm:scroll-mt-[112px]"
+                            aria-hidden="true"
+                        />
+
                         <div class="relative">
                             <TransitionGroup
                                 v-if="browsableWatches.length"
