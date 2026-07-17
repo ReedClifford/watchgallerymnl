@@ -69,6 +69,7 @@ class WatchController extends Controller
                         ->where('brand', 'like', "%{$search}%")
                         ->orWhere('model_name', 'like', "%{$search}%")
                         ->orWhere('reference_number', 'like', "%{$search}%")
+                        ->orWhere('release', 'like', "%{$search}%")
                         ->orWhere('condition', 'like', "%{$search}%")
                         ->orWhere('gender', 'like', "%{$search}%");
                 });
@@ -98,6 +99,7 @@ class WatchController extends Controller
                     'brand' => $watch->brand,
                     'model_name' => $watch->model_name,
                     'reference_number' => $watch->reference_number,
+                    'release' => $watch->release,
                     'condition' => $watch->condition,
                     'gender' => $watch->gender ?? 'unisex',
                     'description' => $watch->description,
@@ -265,7 +267,7 @@ class WatchController extends Controller
 
         if ($watch->status === 'sold') {
             return back()->withErrors([
-                'status' => 'Sold watches cannot be changed from the quick status buttons. Use visibility toggle or edit sold details instead.',
+                'status' => 'Sold watches cannot be changed directly. Use the relist action to create a new inventory entry.',
             ]);
         }
 
@@ -293,8 +295,133 @@ class WatchController extends Controller
         return back()->with('success', 'Visibility updated.');
     }
 
-public function duplicate(Watch $watch)
-{
+    public function relist(Request $request, Watch $watch)
+    {
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(self::QUICK_STATUS_OPTIONS)],
+        ]);
+
+        if ($watch->status !== 'sold') {
+            return back()->withErrors([
+                'status' => 'Only sold watches can be relisted as a new inventory entry.',
+            ]);
+        }
+
+        $watch->load([
+            'images' => function ($query) {
+                $query
+                    ->orderBy('sort_order')
+                    ->orderBy('id');
+            },
+        ]);
+
+        DB::transaction(function () use ($watch, $validated) {
+            $newWatch = $watch->replicate([
+                'slug',
+                'sku',
+                'code',
+                'uuid',
+                'serial',
+                'serial_number',
+                'warranty_code',
+                'sold_price',
+                'date_sold',
+                'buyer_name',
+                'created_at',
+                'updated_at',
+            ]);
+
+            // Keep the original watch identity/details, including release.
+            // Only inventory- and sale-specific values are reset.
+            $newWatch->status = $validated['status'];
+            $newWatch->is_visible = true;
+
+            if (Schema::hasColumn('watches', 'sold_price')) {
+                $newWatch->sold_price = null;
+            }
+
+            if (Schema::hasColumn('watches', 'date_sold')) {
+                $newWatch->date_sold = null;
+            }
+
+            if (Schema::hasColumn('watches', 'buyer_name')) {
+                $newWatch->buyer_name = null;
+            }
+
+            if (Schema::hasColumn('watches', 'serial_number')) {
+                $newWatch->serial_number = null;
+            }
+
+            if (Schema::hasColumn('watches', 'serial')) {
+                $newWatch->serial = null;
+            }
+
+            if (Schema::hasColumn('watches', 'sku')) {
+                $newWatch->sku = null;
+            }
+
+            if (Schema::hasColumn('watches', 'code')) {
+                $newWatch->code = null;
+            }
+
+            if (Schema::hasColumn('watches', 'uuid')) {
+                $newWatch->uuid = (string) Str::uuid();
+            }
+
+            if (Schema::hasColumn('watches', 'warranty_code')) {
+                $newWatch->warranty_code = null;
+            }
+
+            if (Schema::hasColumn('watches', 'is_featured')) {
+                $newWatch->is_featured = false;
+            }
+
+            if (Schema::hasColumn('watches', 'is_best_seller')) {
+                $newWatch->is_best_seller = false;
+            }
+
+            if (Schema::hasColumn('watches', 'slug')) {
+                $newWatch->slug = $this->uniqueSlug(
+                    trim(
+                        $newWatch->model_name . ' ' .
+                        ($newWatch->reference_number ?? '') . ' ' .
+                        ($newWatch->release ?? '')
+                    )
+                );
+            }
+
+            if (Schema::hasColumn('watches', 'sort_order')) {
+                $newWatch->sort_order = ((int) Watch::max('sort_order')) + 1;
+            }
+
+            $newWatch->save();
+
+            foreach ($watch->images as $image) {
+                $copiedPath = $this->copyWatchImagePath($image->image_path);
+
+                if (! $copiedPath) {
+                    continue;
+                }
+
+                WatchImage::create([
+                    'watch_id' => $newWatch->id,
+                    'image_path' => $copiedPath,
+                    'is_primary' => (bool) $image->is_primary,
+                    'sort_order' => $image->sort_order,
+                ]);
+            }
+
+            $this->normalizeImageOrder($newWatch);
+        });
+
+        return back()->with(
+            'success',
+            'A new ' . str_replace('_', ' ', $validated['status']) . ' inventory entry was created.'
+        );
+    }
+
+    public function duplicate(Watch $watch)
+    {
     $watch->load([
         'images' => function ($query) {
             $query
@@ -498,6 +625,7 @@ private function nextDuplicateModelName(string $baseModelName): string
             'brand' => ['required', 'string', 'max:255'],
             'model_name' => ['required', 'string', 'max:255'],
             'reference_number' => ['nullable', 'string', 'max:255'],
+            'release' => ['nullable', 'string', 'max:255'],
             'condition' => ['required', 'string', 'max:255'],
 
             'gender' => ['nullable', 'in:unisex,men,women'],

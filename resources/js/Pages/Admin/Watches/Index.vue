@@ -75,6 +75,13 @@ const basicFields = [
         type: "text",
     },
     {
+        key: "release",
+        label: "Release",
+        placeholder: "JDM / US Release / International Release",
+        required: false,
+        type: "text",
+    },
+    {
         key: "condition",
         label: "Condition",
         placeholder: "Brand New",
@@ -293,6 +300,7 @@ const defaultForm = () => ({
     brand: "Seiko",
     model_name: "",
     reference_number: "",
+    release: "",
     condition: "Brand New",
     gender: "unisex",
     description: "",
@@ -565,6 +573,7 @@ const openEditModal = (watch) => {
         brand: watch.brand ?? "Seiko",
         model_name: watch.model_name ?? "",
         reference_number: watch.reference_number ?? "",
+        release: watch.release ?? "",
         condition: normalizeConditionForForm(watch.condition),
         gender: watch.gender ?? "unisex",
         description: watch.description ?? "",
@@ -1138,6 +1147,69 @@ const changeWatchStatus = async (watch, status) => {
     );
 };
 
+const relistSoldWatch = async (watch, status) => {
+    if (!watch || watch.status !== "sold" || isStatusProcessing(watch)) {
+        return;
+    }
+
+    const result = await Swal.fire({
+        title: `Relist as ${statusLabel(status)}?`,
+        html: `
+            <div style="text-align:center">
+                <strong>${watch.brand || ""} ${watch.model_name || ""}</strong>
+                <br>
+                <span style="font-size:13px;color:#64748b">
+                    The sold record will remain unchanged. A new inventory entry with copied details and photos will be created.
+                </span>
+            </div>
+        `,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: `Create ${statusLabel(status)} Entry`,
+        cancelButtonText: "Cancel",
+        reverseButtons: true,
+        ...swalTheme,
+    });
+
+    if (!result.isConfirmed) return;
+
+    setStatusProcessing(watch.id, true, status);
+
+    router.post(
+        route("admin.watches.relist", watch.id),
+        { status },
+        {
+            preserveScroll: true,
+            preserveState: false,
+            replace: true,
+            onSuccess: () => {
+                toast.fire({
+                    icon: "success",
+                    title: `New ${statusLabel(status)} entry created`,
+                });
+
+                refreshInventory();
+            },
+            onError: (errors) => {
+                const firstError =
+                    Object.values(errors || {})?.[0] ||
+                    "Unable to create a new inventory entry from this sold watch.";
+
+                Swal.fire({
+                    title: "Relist failed",
+                    text: firstError,
+                    icon: "error",
+                    confirmButtonText: "Okay",
+                    ...swalTheme,
+                });
+            },
+            onFinish: () => {
+                setStatusProcessing(watch.id, false);
+            },
+        },
+    );
+};
+
 const toggleWatchVisibility = async (watch) => {
     if (!watch) return;
 
@@ -1421,7 +1493,7 @@ const deleteWatch = async (watch) => {
                         <input
                             v-model="search"
                             type="search"
-                            placeholder="Search model, brand, reference..."
+                            placeholder="Search model, brand, reference, release..."
                             class="w-full rounded-2xl border-slate-200 bg-slate-50 text-sm text-[#071923] placeholder:text-slate-400 focus:border-[#0b3a56] focus:ring-[#0b3a56]"
                             @keyup.enter="applyFilters()"
                         />
@@ -1589,12 +1661,23 @@ const deleteWatch = async (watch) => {
                         </div>
 
                         <div class="p-4 sm:p-5">
-                            <p class="mb-3 text-sm text-slate-500">
-                                {{
-                                    watch.reference_number ||
-                                    "No reference number"
-                                }}
-                            </p>
+                            <div
+                                class="mb-3 flex flex-wrap items-center gap-2 text-sm text-slate-500"
+                            >
+                                <span>
+                                    {{
+                                        watch.reference_number ||
+                                        "No reference number"
+                                    }}
+                                </span>
+
+                                <span
+                                    v-if="watch.release"
+                                    class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600"
+                                >
+                                    {{ watch.release }}
+                                </span>
+                            </div>
 
                             <div
                                 class="mb-4 rounded-3xl border border-slate-200 bg-slate-50 p-4"
@@ -1720,6 +1803,49 @@ const deleteWatch = async (watch) => {
                                                     watch.id
                                                 ] === status.value
                                                     ? "Updating..."
+                                                    : status.label
+                                            }}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div
+                                    v-if="watch.status === 'sold'"
+                                    class="rounded-3xl border border-[#0b3a56]/15 bg-[#eef8fb] p-3"
+                                >
+                                    <p
+                                        class="mb-1 text-[10px] font-black uppercase tracking-[0.22em] text-[#0b3a56]/70"
+                                    >
+                                        Create New Inventory Entry
+                                    </p>
+                                    <p
+                                        class="mb-3 text-xs leading-relaxed text-slate-500"
+                                    >
+                                        The original sold record stays
+                                        unchanged.
+                                    </p>
+
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <button
+                                            v-for="status in quickStatusOptions"
+                                            :key="`relist-${watch.id}-${status.value}`"
+                                            type="button"
+                                            :disabled="
+                                                isStatusProcessing(watch)
+                                            "
+                                            @click="
+                                                relistSoldWatch(
+                                                    watch,
+                                                    status.value,
+                                                )
+                                            "
+                                            class="rounded-2xl border border-[#0b3a56]/15 bg-white px-2 py-2.5 text-[11px] font-black text-[#0b3a56] transition hover:border-[#0b3a56]/35 hover:bg-[#dff3f8] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                                        >
+                                            {{
+                                                pendingStatusByWatch[
+                                                    watch.id
+                                                ] === status.value
+                                                    ? "Creating..."
                                                     : status.label
                                             }}
                                         </button>

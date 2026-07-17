@@ -14,6 +14,8 @@ class Watch extends Model
         'model_name',
         'reference_number',
         'condition',
+            'release',
+
         'description',
         'movement',
         'case_size',

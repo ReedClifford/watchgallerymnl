@@ -292,6 +292,10 @@ const specs = computed(() => {
             value: props.watch.reference_number,
         },
         {
+            label: "Release",
+            value: props.watch.release,
+        },
+        {
             label: "Condition",
             value: props.watch.condition,
         },
@@ -552,6 +556,13 @@ const specs = computed(() => {
                                                             "Watch Details"
                                                         }}
                                                     </h2>
+
+                                                    <p
+                                                        v-if="watch.release"
+                                                        class="main-watch-release"
+                                                    >
+                                                        {{ watch.release }}
+                                                    </p>
 
                                                     <div
                                                         class="mt-3 flex flex-wrap items-center gap-1.5"
@@ -923,16 +934,25 @@ const specs = computed(() => {
                                 </div>
 
                                 <div class="bottom-watch-body">
-                                    <h3 class="bottom-watch-title">
-                                        {{
-                                            item.display_name ||
-                                            item.model_name ||
-                                            item.name ||
-                                            item.title ||
-                                            item.reference_number ||
-                                            "Watch Details"
-                                        }}
-                                    </h3>
+                                    <div>
+                                        <h3 class="bottom-watch-title">
+                                            {{
+                                                item.display_name ||
+                                                item.model_name ||
+                                                item.name ||
+                                                item.title ||
+                                                item.reference_number ||
+                                                "Watch Details"
+                                            }}
+                                        </h3>
+
+                                        <p
+                                            v-if="item.release"
+                                            class="bottom-watch-release"
+                                        >
+                                            {{ item.release }}
+                                        </p>
+                                    </div>
 
                                     <div class="bottom-watch-price-row">
                                         <p class="bottom-watch-price">
@@ -964,6 +984,38 @@ const specs = computed(() => {
 </template>
 
 <style scoped>
+@font-face {
+    font-family: "WGM Enduro";
+    src: url("/fonts/Enduro-Regular.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "WGM Enduro";
+    src: url("/fonts/Enduro-Bold.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+}
+
+.main-watch-release {
+    margin-top: 0.48rem;
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.56);
+    font-family:
+        "WGM Enduro", "Avenir Next", Avenir, "Helvetica Neue", Arial,
+        ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.82rem;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1.08;
+    letter-spacing: 0.025em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .status-badge {
     display: inline-flex;
     align-items: center;
@@ -1234,12 +1286,17 @@ const specs = computed(() => {
 }
 
 .bottom-watch-body {
+    --bottom-watch-font:
+        "WGM Enduro", "Avenir Next", Avenir, "Helvetica Neue", Arial,
+        ui-sans-serif, system-ui, sans-serif;
+
     display: flex;
     min-height: 6.65rem;
     flex-direction: column;
     justify-content: flex-end;
     padding: 1rem 1.05rem 1.1rem;
     background: #ffffff;
+    font-family: var(--bottom-watch-font);
 }
 
 .bottom-watch-title {
@@ -1248,12 +1305,27 @@ const specs = computed(() => {
     min-height: 2.55rem;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
+    font-family: var(--bottom-watch-font);
     font-size: 1.02rem;
-    font-weight: 800;
+    font-weight: 700;
     line-height: 1.12;
-    letter-spacing: -0.042em;
+    letter-spacing: -0.015em;
     color: #222222;
     transition: color 0.24s ease;
+}
+
+.bottom-watch-release {
+    margin-top: 0.24rem;
+    overflow: hidden;
+    color: #71717a;
+    font-family: var(--bottom-watch-font);
+    font-size: 0.74rem;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1.05;
+    letter-spacing: 0.018em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .bottom-watch-card:hover .bottom-watch-title {
@@ -1272,10 +1344,11 @@ const specs = computed(() => {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-family: var(--bottom-watch-font);
     font-size: 1.14rem;
-    font-weight: 900;
+    font-weight: 400;
     line-height: 1;
-    letter-spacing: -0.052em;
+    letter-spacing: 0.04em;
     color: #111827;
 }
 
@@ -1283,9 +1356,11 @@ const specs = computed(() => {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-family: var(--bottom-watch-font);
     font-size: 0.64rem;
-    font-weight: 800;
+    font-weight: 400;
     line-height: 1;
+    letter-spacing: 0.015em;
     color: #a1a1aa;
     text-decoration-line: line-through;
     text-decoration-color: #a1a1aa;
@@ -1421,6 +1496,10 @@ const specs = computed(() => {
         font-size: 1.17rem;
     }
 
+    .bottom-watch-release {
+        font-size: 0.82rem;
+    }
+
     .bottom-watch-price {
         font-size: 1.32rem;
     }
@@ -1466,6 +1545,11 @@ const specs = computed(() => {
     .bottom-watch-title {
         min-height: 2.3rem;
         font-size: 0.92rem;
+    }
+
+    .bottom-watch-release {
+        margin-top: 0.18rem;
+        font-size: 0.66rem;
     }
 
     .bottom-watch-price {

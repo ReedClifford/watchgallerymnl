@@ -100,7 +100,8 @@ class PublicPageController extends Controller
                 $query->where(function ($subQuery) use ($search, $normalizedSearch) {
                     $subQuery
                         ->where('model_name', 'like', "%{$search}%")
-                        ->orWhere('reference_number', 'like', "%{$search}%");
+                        ->orWhere('reference_number', 'like', "%{$search}%")
+                        ->orWhere('release', 'like', "%{$search}%");
 
                     if ($normalizedSearch !== '') {
                         $subQuery
@@ -110,6 +111,10 @@ class PublicPageController extends Controller
                             )
                             ->orWhereRaw(
                                 "LOWER(REPLACE(REPLACE(reference_number, ' ', ''), '-', '')) LIKE ?",
+                                ["%{$normalizedSearch}%"]
+                            )
+                            ->orWhereRaw(
+                                "LOWER(REPLACE(REPLACE(`release`, ' ', ''), '-', '')) LIKE ?",
                                 ["%{$normalizedSearch}%"]
                             );
                     }
@@ -229,6 +234,7 @@ class PublicPageController extends Controller
             'title' => $displayName,
 
             'reference_number' => $watch->reference_number,
+            'release' => $watch->release,
             'condition' => $watch->condition,
             'description' => $watch->description,
             'category' => $watch->category,

@@ -781,7 +781,7 @@ const watchDetailsLink = (watch) => {
 const watchCardLabel = (watch) => {
     return `View details for ${watch.brand || ""} ${watch.model_name || ""} ${
         watch.reference_number || ""
-    }`;
+    } ${watch.release || ""}`.trim();
 };
 
 const genderLabel = (gender) => {
@@ -1554,11 +1554,20 @@ const messengerLink = (watch = null) => {
                                         <div
                                             class="flex min-h-[4.6rem] flex-col justify-between gap-2 sm:min-h-[5.6rem] sm:gap-3 lg:min-h-[6rem]"
                                         >
-                                            <h3
-                                                class="shop-card-title line-clamp-2"
-                                            >
-                                                {{ watch.model_name }}
-                                            </h3>
+                                            <div>
+                                                <h3
+                                                    class="shop-card-title line-clamp-2"
+                                                >
+                                                    {{ watch.model_name }}
+                                                </h3>
+
+                                                <p
+                                                    v-if="watch.release"
+                                                    class="shop-card-release line-clamp-1"
+                                                >
+                                                    {{ watch.release }}
+                                                </p>
+                                            </div>
 
                                             <div class="shop-card-price-stack">
                                                 <p class="shop-card-price">
@@ -2259,6 +2268,22 @@ const messengerLink = (watch = null) => {
 </template>
 
 <style scoped>
+@font-face {
+    font-family: "WGM Enduro";
+    src: url("/fonts/Enduro-Regular.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "WGM Enduro";
+    src: url("/fonts/Enduro-Bold.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+}
+
 .hero-panel {
     overflow: hidden;
     backface-visibility: hidden;
@@ -3097,6 +3122,11 @@ button:hover .shop-now-icon {
 }
 
 .shop-grid-card-body {
+    --shop-card-font:
+        "WGM Enduro", "Avenir Next", Avenir, "Helvetica Neue", Arial,
+        ui-sans-serif, system-ui, sans-serif;
+
+    font-family: var(--shop-card-font);
     transition:
         transform 0.24s ease,
         color 0.24s ease;
@@ -3104,12 +3134,27 @@ button:hover .shop-now-icon {
 
 .shop-card-title {
     color: #0f172a;
+    font-family: var(--shop-card-font);
     font-size: 1rem;
-    font-weight: 950;
+    font-weight: 700;
     line-height: 1.08;
-    letter-spacing: -0.035em;
+    letter-spacing: -0.015em;
     text-wrap: balance;
     transition: color 0.24s ease;
+}
+
+.shop-card-release {
+    margin: 0.22rem 0 0;
+    overflow: hidden;
+    color: #64748b;
+    font-family: var(--shop-card-font);
+    font-size: 0.8rem;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1.05;
+    letter-spacing: 0.015em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .shop-card-price-stack {
@@ -3123,15 +3168,17 @@ button:hover .shop-now-icon {
 .shop-card-price {
     margin: 0;
     color: #071923;
+    font-family: var(--shop-card-font);
     font-size: 1rem;
-    font-weight: 950;
+    font-weight: 400;
     line-height: 1.05;
-    letter-spacing: -0.042em;
+    letter-spacing: 0.045em;
     font-variant-numeric: tabular-nums;
 }
 
 .shop-card-srp-wrap {
     position: relative;
+    font-family: var(--shop-card-font);
     display: inline-flex;
     width: fit-content;
     max-width: 100%;
@@ -3140,9 +3187,9 @@ button:hover .shop-now-icon {
     color: #94a3b8;
     opacity: 0.94;
     font-size: 0.8rem;
-    font-weight: 850;
+    font-weight: 400;
     line-height: 1.05;
-    letter-spacing: -0.01em;
+    letter-spacing: 0.02em;
 }
 
 .shop-card-srp-wrap::after {
@@ -3171,6 +3218,7 @@ button:hover .shop-now-icon {
 
 .shop-card-old-price {
     margin: 0;
+    font-family: var(--shop-card-font);
     display: inline-block;
     max-width: 100%;
     width: fit-content;
@@ -3179,7 +3227,7 @@ button:hover .shop-now-icon {
     white-space: nowrap;
     color: inherit;
     font-size: inherit;
-    font-weight: 850;
+    font-weight: 400;
     line-height: inherit;
     letter-spacing: inherit;
     text-decoration: none;
@@ -3196,7 +3244,7 @@ button:hover .shop-now-icon {
     .shop-card-price {
         font-size: 1.14rem;
         line-height: 1.08;
-        letter-spacing: -0.038em;
+        letter-spacing: -0.015em;
     }
 
     .shop-card-price-stack {
@@ -3209,6 +3257,10 @@ button:hover .shop-now-icon {
         font-size: 0.84rem;
         line-height: 1.05;
     }
+
+    .shop-card-release {
+        font-size: 0.84rem;
+    }
 }
 
 @media (min-width: 1024px) {
@@ -3216,7 +3268,7 @@ button:hover .shop-now-icon {
     .shop-card-price {
         font-size: 1.28rem;
         line-height: 1.07;
-        letter-spacing: -0.042em;
+        letter-spacing: -0.015em;
     }
 
     .shop-card-price-stack {
@@ -3225,6 +3277,10 @@ button:hover .shop-now-icon {
     }
 
     .shop-card-srp-wrap {
+        font-size: 0.92rem;
+    }
+
+    .shop-card-release {
         font-size: 0.92rem;
     }
 }
@@ -3982,13 +4038,19 @@ button:hover .shop-now-icon {
     .shop-card-title {
         font-size: 0.76rem;
         line-height: 1.05;
-        letter-spacing: -0.035em;
+        letter-spacing: -0.01em;
     }
 
     .shop-card-price {
         font-size: 0.92rem;
         line-height: 1.05;
-        letter-spacing: -0.035em;
+        letter-spacing: 0.035em;
+    }
+
+    .shop-card-release {
+        margin-top: 0.16rem;
+        font-size: 0.66rem;
+        line-height: 1.03;
     }
 
     .shop-card-price-stack {
@@ -4000,7 +4062,7 @@ button:hover .shop-now-icon {
         gap: 0;
         font-size: 0.66rem;
         line-height: 1.03;
-        letter-spacing: -0.008em;
+        letter-spacing: 0.012em;
     }
 
     .shop-grid-card-body > div {

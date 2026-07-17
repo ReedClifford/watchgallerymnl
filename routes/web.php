@@ -50,6 +50,8 @@ Route::middleware(['auth'])
 
         Route::patch('/watches/{watch}/mark-as-sold', [WatchController::class, 'markAsSold'])
             ->name('watches.mark-as-sold');
+            Route::post('/watches/{watch}/relist', [WatchController::class, 'relist'])
+    ->name('watches.relist');
 
         Route::patch('/watches/{watch}/status', [WatchController::class, 'updateStatus'])
             ->name('watches.update-status');
