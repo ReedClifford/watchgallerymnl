@@ -316,7 +316,7 @@ private function visibleTransactions()
 
     $transactions = $query
         ->orderByDesc('id')
-        ->limit(12)
+        ->limit(15)
         ->get();
 
     if ($transactions->isEmpty()) {
