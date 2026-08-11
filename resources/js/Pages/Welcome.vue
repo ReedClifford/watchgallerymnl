@@ -3110,7 +3110,7 @@ button:hover .shop-now-icon {
 }
 
 .shop-card-title {
-    color: #0f172a;
+    color: #36454f;
     font-family: var(--shop-card-font);
     font-size: 1rem;
     font-weight: 700;
@@ -3144,13 +3144,13 @@ button:hover .shop-now-icon {
 
 .shop-card-price {
     margin: 0;
-    color: #071923;
+    color: #36454f;
     font-family: var(--shop-card-font);
     font-size: 1rem;
     font-weight: 600;
     line-height: 1.05;
     letter-spacing: 0.045em;
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: proportional-nums;
 }
 
 .shop-card-srp-wrap {
