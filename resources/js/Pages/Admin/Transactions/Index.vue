@@ -380,6 +380,51 @@ const submitForm = () => {
     );
 };
 
+const toggleTransactionVisibility = async (transaction) => {
+    const willShow = !Boolean(transaction.is_visible);
+
+    const result = await Swal.fire({
+        title: willShow ? "Show transaction?" : "Hide transaction?",
+        text: willShow
+            ? "This transaction will appear again in the public gallery."
+            : "This transaction will be removed from the public gallery but will remain in your admin records.",
+        icon: willShow ? "question" : "warning",
+        showCancelButton: true,
+        confirmButtonText: willShow ? "Yes, show it" : "Yes, hide it",
+        cancelButtonText: "Cancel",
+        reverseButtons: true,
+        ...swalTheme,
+    });
+
+    if (!result.isConfirmed) return;
+
+    router.patch(
+        route("admin.transactions.toggle-visibility", transaction.id),
+        {},
+        {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.fire({
+                    icon: "success",
+                    title: willShow
+                        ? "Transaction is now visible"
+                        : "Transaction has been hidden",
+                });
+            },
+            onError: () => {
+                Swal.fire({
+                    title: "Update failed",
+                    text: "Something went wrong while updating the transaction visibility.",
+                    icon: "error",
+                    confirmButtonText: "Okay",
+                    ...swalTheme,
+                });
+            },
+        },
+    );
+};
+
 const deleteTransaction = async (transaction) => {
     const result = await Swal.fire({
         title: "Delete transaction?",
@@ -739,19 +784,36 @@ const deleteTransaction = async (transaction) => {
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-2">
+                            <div class="grid grid-cols-3 gap-2">
                                 <button
                                     type="button"
                                     @click="openEditModal(transaction)"
-                                    class="rounded-2xl border border-[#0b3a56]/20 bg-[#eef8fb] px-4 py-3 text-sm font-black text-[#0b3a56] transition hover:border-[#0b3a56]/40 hover:bg-[#dff3f8] active:scale-95"
+                                    class="rounded-2xl border border-[#0b3a56]/20 bg-[#eef8fb] px-3 py-3 text-sm font-black text-[#0b3a56] transition hover:border-[#0b3a56]/40 hover:bg-[#dff3f8] active:scale-95"
                                 >
                                     Edit
                                 </button>
 
                                 <button
                                     type="button"
+                                    @click="
+                                        toggleTransactionVisibility(transaction)
+                                    "
+                                    class="rounded-2xl border px-3 py-3 text-sm font-black transition active:scale-95"
+                                    :class="
+                                        transaction.is_visible
+                                            ? 'border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300 hover:bg-amber-100'
+                                            : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100'
+                                    "
+                                >
+                                    {{
+                                        transaction.is_visible ? "Hide" : "Show"
+                                    }}
+                                </button>
+
+                                <button
+                                    type="button"
                                     @click="deleteTransaction(transaction)"
-                                    class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-black text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 active:scale-95"
+                                    class="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-3 text-sm font-black text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 active:scale-95"
                                 >
                                     Delete
                                 </button>

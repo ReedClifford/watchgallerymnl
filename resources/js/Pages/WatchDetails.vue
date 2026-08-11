@@ -975,6 +975,54 @@ const specs = computed(() => {
                                     </div>
                                 </div>
                             </Link>
+
+                            <a
+                                href="/#watch-grid-start"
+                                class="bottom-watch-card group snap-start"
+                                aria-label="View all watches"
+                            >
+                                <div
+                                    class="bottom-watch-media bottom-watch-view-more-media grid place-items-center"
+                                >
+                                    <div class="px-5 text-center text-white">
+                                        <p
+                                            class="text-[9px] font-black uppercase tracking-[0.24em] text-white/55"
+                                        >
+                                            Full Collection
+                                        </p>
+
+                                        <p
+                                            class="mt-2 text-2xl font-black tracking-[-0.05em]"
+                                        >
+                                            View More
+                                        </p>
+
+                                        <div
+                                            class="mx-auto mt-4 grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/10 text-xl transition group-hover:translate-x-1 group-hover:bg-white group-hover:text-[#071923]"
+                                        >
+                                            →
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bottom-watch-body">
+                                    <div>
+                                        <h3 class="bottom-watch-title">
+                                            View All Watches
+                                        </h3>
+
+                                        <p class="bottom-watch-release">
+                                            Browse the full collection
+                                        </p>
+                                    </div>
+
+                                    <div class="bottom-watch-price-row">
+                                        <p class="bottom-watch-price">
+                                            Explore →
+                                        </p>
+                                    </div>
+                                </div>
+                            </a>
                         </div>
                     </div>
                 </section>
@@ -1156,6 +1204,10 @@ const specs = computed(() => {
     background: #f1f5f9;
 }
 
+.bottom-watch-view-more-media {
+    background: linear-gradient(135deg, #061725 0%, #0b3a56 50%, #071923 100%);
+}
+
 .bottom-watch-image {
     height: 100%;
     width: 100%;
@@ -1321,7 +1373,7 @@ const specs = computed(() => {
     font-family: var(--bottom-watch-font);
     font-size: 0.74rem;
     font-style: normal;
-    font-weight: 400;
+    font-weight: 700;
     line-height: 1.05;
     letter-spacing: 0.018em;
     text-overflow: ellipsis;
@@ -1346,7 +1398,7 @@ const specs = computed(() => {
     white-space: nowrap;
     font-family: var(--bottom-watch-font);
     font-size: 1.14rem;
-    font-weight: 400;
+    font-weight: 700;
     line-height: 1;
     letter-spacing: 0.04em;
     color: #111827;
@@ -1358,7 +1410,7 @@ const specs = computed(() => {
     white-space: nowrap;
     font-family: var(--bottom-watch-font);
     font-size: 0.64rem;
-    font-weight: 400;
+    font-weight: 700;
     line-height: 1;
     letter-spacing: 0.015em;
     color: #a1a1aa;

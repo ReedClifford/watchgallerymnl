@@ -47,7 +47,7 @@ class TransactionController extends Controller
                     'title' => $transaction->title,
                     'caption' => $transaction->caption,
                     'transaction_date' => optional($transaction->transaction_date)->format('Y-m-d'),
-                    'is_visible' => $transaction->is_visible,
+                    'is_visible' => (bool) $transaction->is_visible,
                     'image_url' => $transaction->firstImage
                         ? Storage::url($transaction->firstImage->image_path)
                         : null,
@@ -97,6 +97,19 @@ class TransactionController extends Controller
         return redirect()
             ->route('admin.transactions.index')
             ->with('success', 'Transaction updated successfully.');
+    }
+
+    public function toggleVisibility(Transaction $transaction)
+    {
+        $transaction->is_visible = ! (bool) $transaction->is_visible;
+        $transaction->save();
+
+        return back()->with(
+            'success',
+            $transaction->is_visible
+                ? 'Transaction is now visible on the website.'
+                : 'Transaction has been hidden from the website.'
+        );
     }
 
     public function destroy(Transaction $transaction)

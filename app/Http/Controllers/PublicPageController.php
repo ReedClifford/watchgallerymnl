@@ -31,13 +31,7 @@ class PublicPageController extends Controller
         );
 
         $inDemand = trim((string) $request->input('in_demand', ''));
-        $sort = $this->normalizeSortFilter($request->input('sort', 'random'));
-
-        $randomSeed = (int) $request->input('random_seed');
-
-        if ($randomSeed <= 0) {
-            $randomSeed = random_int(1, 999999999);
-        }
+        $sort = $this->normalizeSortFilter($request->input('sort', 'first_in'));
 
         $hasGenderColumn = Schema::hasColumn('watches', 'gender');
         $hasCategoryColumn = Schema::hasColumn('watches', 'category');
@@ -86,7 +80,7 @@ class PublicPageController extends Controller
             ->with($this->watchCardRelations())
             ->whereIn('status', self::LISTED_STATUSES)
             ->where('is_visible', true)
-            ->latest('id')
+            ->orderBy('id')
             ->limit(5)
             ->get()
             ->map(fn ($watch) => $this->watchCard($watch))
@@ -147,15 +141,14 @@ class PublicPageController extends Controller
                 }
             );
 
-        $this->applyCollectionSort($watchesQuery, $sort, $randomSeed, $hasInDemandColumn);
+        $this->applyCollectionSort($watchesQuery, $sort, $hasInDemandColumn);
 
         $queryString = collect([
             'search' => $search !== '' ? $search : null,
             'condition' => $condition !== '' ? $condition : null,
             'gender' => $gender !== '' ? $gender : null,
             'in_demand' => $inDemand !== '' ? $inDemand : null,
-            'sort' => $sort,
-            'random_seed' => $sort === 'random' ? $randomSeed : null,
+            'sort' => $sort !== 'first_in' ? $sort : null,
         ])
             ->filter(fn ($value) => filled($value))
             ->all();
@@ -184,7 +177,6 @@ class PublicPageController extends Controller
                 'gender' => $gender,
                 'in_demand' => $inDemand,
                 'sort' => $sort,
-                'random_seed' => $sort === 'random' ? $randomSeed : null,
                 'category' => $gender,
             ],
         ]);
@@ -213,7 +205,7 @@ class PublicPageController extends Controller
 
         return Inertia::render('WatchDetails', [
             'watch' => $this->watchDetails($watch),
-            'otherWatches' => $this->randomWatchCards($watch),
+            'otherWatches' => $this->otherWatchCards($watch),
         ]);
     }
 
@@ -303,86 +295,95 @@ class PublicPageController extends Controller
         ];
     }
 
-    private function visibleTransactions()
-    {
-        if (! Schema::hasTable('transactions') || ! Schema::hasTable('transaction_images')) {
-            return collect();
-        }
-
-        $query = DB::table('transactions')
-            ->select('transactions.*');
-
-        if (Schema::hasColumn('transactions', 'is_visible')) {
-            $query->where('is_visible', true);
-        }
-
-        if (Schema::hasColumn('transactions', 'transaction_date')) {
-            $query->orderByDesc('transaction_date');
-        } elseif (Schema::hasColumn('transactions', 'created_at')) {
-            $query->orderByDesc('created_at');
-        }
-
-        $transactions = $query
-            ->orderByDesc('id')
-            ->limit(12)
-            ->get();
-
-        if ($transactions->isEmpty()) {
-            return collect();
-        }
-
-        $transactionIds = $transactions->pluck('id')->filter()->values();
-
-        $imageQuery = DB::table('transaction_images')
-            ->whereIn('transaction_id', $transactionIds)
-            ->whereNotNull('image_path')
-            ->where('image_path', '!=', '');
-
-        if (Schema::hasColumn('transaction_images', 'is_primary')) {
-            $imageQuery->orderByDesc('is_primary');
-        }
-
-        if (Schema::hasColumn('transaction_images', 'sort_order')) {
-            $imageQuery->orderBy('sort_order');
-        }
-
-        $transactionImages = $imageQuery
-            ->orderBy('id')
-            ->get()
-            ->groupBy('transaction_id');
-
-        return $transactions
-            ->map(function ($transaction) use ($transactionImages) {
-                $image = $transactionImages
-                    ->get($transaction->id, collect())
-                    ->first();
-
-                return [
-                    'id' => $transaction->id,
-                    'title' => filled($transaction->title ?? null)
-                        ? $transaction->title
-                        : 'Successful Transaction',
-                    'caption' => filled($transaction->caption ?? null)
-                        ? $transaction->caption
-                        : 'Thank you for trusting Watch Gallery Manila.',
-                    'transaction_date' => $transaction->transaction_date
-                        ?? $transaction->created_at
-                        ?? null,
-                    'image_url' => $this->storageUrl($image->image_path ?? null),
-                ];
-            })
-            ->filter(fn ($transaction) => filled($transaction['image_url']))
-            ->values();
+private function visibleTransactions()
+{
+    if (
+        ! Schema::hasTable('transactions') ||
+        ! Schema::hasTable('transaction_images')
+    ) {
+        return collect();
     }
 
-    private function randomWatchCards(Watch $currentWatch)
+    $query = DB::table('transactions')
+        ->select('transactions.*')
+        ->where('transactions.is_visible', 1);
+
+    if (Schema::hasColumn('transactions', 'transaction_date')) {
+        $query->orderByDesc('transaction_date');
+    } elseif (Schema::hasColumn('transactions', 'created_at')) {
+        $query->orderByDesc('created_at');
+    }
+
+    $transactions = $query
+        ->orderByDesc('id')
+        ->limit(12)
+        ->get();
+
+    if ($transactions->isEmpty()) {
+        return collect();
+    }
+
+    $transactionIds = $transactions
+        ->pluck('id')
+        ->filter()
+        ->values();
+
+    $imageQuery = DB::table('transaction_images')
+        ->whereIn('transaction_id', $transactionIds)
+        ->whereNotNull('image_path')
+        ->where('image_path', '!=', '');
+
+    if (Schema::hasColumn('transaction_images', 'is_primary')) {
+        $imageQuery->orderByDesc('is_primary');
+    }
+
+    if (Schema::hasColumn('transaction_images', 'sort_order')) {
+        $imageQuery->orderBy('sort_order');
+    }
+
+    $transactionImages = $imageQuery
+        ->orderBy('id')
+        ->get()
+        ->groupBy('transaction_id');
+
+    return $transactions
+        ->map(function ($transaction) use ($transactionImages) {
+            $image = $transactionImages
+                ->get($transaction->id, collect())
+                ->first();
+
+            return [
+                'id' => $transaction->id,
+                'title' => filled($transaction->title ?? null)
+                    ? $transaction->title
+                    : 'Successful Transaction',
+
+                'caption' => filled($transaction->caption ?? null)
+                    ? $transaction->caption
+                    : 'Thank you for trusting Watch Gallery Manila.',
+
+                'transaction_date' =>
+                    $transaction->transaction_date
+                    ?? $transaction->created_at
+                    ?? null,
+
+                'image_url' => $this->storageUrl(
+                    $image->image_path ?? null
+                ),
+            ];
+        })
+        ->filter(fn ($transaction) => filled($transaction['image_url']))
+        ->values();
+}
+
+    private function otherWatchCards(Watch $currentWatch)
     {
         return Watch::query()
             ->with($this->watchCardRelations())
             ->whereIn('status', self::LISTED_STATUSES)
             ->where('is_visible', true)
             ->where('id', '!=', $currentWatch->id)
-            ->inRandomOrder()
+            ->orderBy('id')
             ->limit(10)
             ->get()
             ->map(fn ($watch) => $this->watchCard($watch))
@@ -489,11 +490,12 @@ class PublicPageController extends Controller
             'price_low', 'price-low', 'low_to_high', 'low-to-high' => 'price_low',
             'price_high', 'price-high', 'high_to_low', 'high-to-low' => 'price_high',
             'in_demand', 'indemand', 'demand' => 'in_demand',
-            default => 'random',
+            'first_in', 'first-in', 'oldest', 'oldest_first' => 'first_in',
+            default => 'first_in',
         };
     }
 
-    private function applyCollectionSort($query, string $sort, int $randomSeed, bool $hasInDemandColumn): void
+    private function applyCollectionSort($query, string $sort, bool $hasInDemandColumn): void
     {
         if ($sort === 'price_low') {
             $query
@@ -527,7 +529,7 @@ class PublicPageController extends Controller
             return;
         }
 
-        $query->orderByRaw('RAND(' . (int) $randomSeed . ')');
+        $query->orderBy('id');
     }
 
     private function normalizeGenderFilter($value): string

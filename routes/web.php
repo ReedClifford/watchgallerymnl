@@ -65,6 +65,18 @@ Route::middleware(['auth'])
         Route::resource('watches', WatchController::class)
             ->except(['create', 'edit', 'show']);
 
+
+            Route::patch(
+    '/transactions/{transaction}/visibility',
+    [TransactionController::class, 'toggleVisibility']
+)->name('transactions.toggle-visibility');
+
+Route::resource('transactions', TransactionController::class)
+    ->except(['create', 'edit', 'show']);
+
+Route::get('/about-us', [AboutUsController::class, 'edit'])
+    ->name('about-us.edit');
+
         Route::resource('transactions', TransactionController::class)
             ->except(['create', 'edit', 'show']);
 

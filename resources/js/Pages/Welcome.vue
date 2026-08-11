@@ -31,7 +31,7 @@ const props = defineProps({
             condition: "",
             gender: "",
             in_demand: "",
-            sort: "random",
+            sort: "first_in",
             category: "", // legacy fallback for old URLs/controllers
         }),
     },
@@ -144,7 +144,7 @@ const activeGender = ref(
     normalizeGender(props.filters?.gender ?? props.filters?.category ?? ""),
 );
 const activeInDemand = ref(normalizeInDemand(props.filters?.in_demand ?? ""));
-const activeSort = ref(props.filters?.sort ?? "random");
+const activeSort = ref(props.filters?.sort ?? "first_in");
 
 watch(
     () => props.filters,
@@ -155,7 +155,7 @@ watch(
             filters?.gender ?? filters?.category ?? "",
         );
         activeInDemand.value = normalizeInDemand(filters?.in_demand ?? "");
-        activeSort.value = filters?.sort ?? "random";
+        activeSort.value = filters?.sort ?? "first_in";
     },
     { deep: true },
 );
@@ -216,7 +216,7 @@ const hasActiveCollectionFilters = computed(() => {
         activeCondition.value ||
         activeGender.value ||
         activeInDemand.value ||
-        activeSort.value !== "random",
+        activeSort.value !== "first_in",
     );
 });
 
@@ -256,7 +256,7 @@ const activeCollectionFilterPills = computed(() => {
         });
     }
 
-    if (activeSort.value !== "random") {
+    if (activeSort.value !== "first_in") {
         pills.push({
             type: "sort",
             label:
@@ -280,44 +280,8 @@ const watchesData = computed(() => {
     return [];
 });
 
-const collectionShuffleSeed = ref(Math.floor(Math.random() * 1000000));
-
-const getCollectionWatchKey = (watch, index = 0) => {
-    return String(
-        watch?.id ??
-            watch?.slug ??
-            watch?.reference_number ??
-            `${watch?.model_name || "watch"}-${index}`,
-    );
-};
-
-const seededCollectionRandomValue = (value, seed) => {
-    let hash = seed;
-    const stringValue = String(value);
-
-    for (let index = 0; index < stringValue.length; index += 1) {
-        hash = (hash << 5) - hash + stringValue.charCodeAt(index);
-        hash |= 0;
-    }
-
-    return Math.abs(Math.sin(hash) * 10000) % 1;
-};
-
 const browsableWatches = computed(() => {
     const data = [...watchesData.value];
-
-    if (activeSort.value === "random") {
-        return data
-            .map((watch, index) => ({
-                watch,
-                randomOrder: seededCollectionRandomValue(
-                    getCollectionWatchKey(watch, index),
-                    collectionShuffleSeed.value,
-                ),
-            }))
-            .sort((first, second) => first.randomOrder - second.randomOrder)
-            .map((item) => item.watch);
-    }
 
     if (activeSort.value === "price_low") {
         return data.sort((a, b) => {
@@ -355,8 +319,6 @@ const watchPaginationLinks = computed(() => {
     return Array.isArray(props.watches?.links) ? props.watches.links : [];
 });
 
-const heroShuffleSeed = ref(Math.floor(Math.random() * 1000000));
-
 const getWatchUniqueKey = (watch, index = 0) => {
     return String(
         watch?.id ??
@@ -382,37 +344,12 @@ const uniqueWatches = (watches = []) => {
     });
 };
 
-const seededRandomValue = (value, seed) => {
-    let hash = seed;
-    const stringValue = String(value);
+const heroPool = computed(() =>
+    uniqueWatches([...(props.heroWatches ?? []), ...watchesData.value]),
+);
 
-    for (let index = 0; index < stringValue.length; index += 1) {
-        hash = (hash << 5) - hash + stringValue.charCodeAt(index);
-        hash |= 0;
-    }
+const collageWatches = computed(() => heroPool.value.slice(0, 5));
 
-    return Math.abs(Math.sin(hash) * 10000) % 1;
-};
-
-const shuffledHeroPool = computed(() => {
-    const heroPool = uniqueWatches([
-        ...(props.heroWatches ?? []),
-        ...watchesData.value,
-    ]);
-
-    return heroPool
-        .map((watch, index) => ({
-            watch,
-            randomOrder: seededRandomValue(
-                getWatchUniqueKey(watch, index),
-                heroShuffleSeed.value,
-            ),
-        }))
-        .sort((first, second) => first.randomOrder - second.randomOrder)
-        .map((item) => item.watch);
-});
-
-const collageWatches = computed(() => shuffledHeroPool.value.slice(0, 5));
 const hasAboutUs = computed(() => Boolean(props.aboutUs));
 
 const aboutPictures = computed(() => {
@@ -544,7 +481,68 @@ const scrollToWatchGrid = (behavior = "smooth") => {
     scrollToElement("watch-grid-start", isMobileViewport() ? 86 : 96, behavior);
 };
 
+const shouldResetCollectionFiltersAfterReload = () => {
+    if (typeof window === "undefined" || typeof performance === "undefined") {
+        return false;
+    }
+
+    const navigationEntry = performance.getEntriesByType?.("navigation")?.[0];
+    const legacyNavigationType = performance.navigation?.type;
+    const isReload =
+        navigationEntry?.type === "reload" || legacyNavigationType === 1;
+
+    if (!isReload) return false;
+
+    const params = new URLSearchParams(window.location.search);
+    const filterKeys = [
+        "search",
+        "condition",
+        "gender",
+        "category",
+        "in_demand",
+        "sort",
+    ];
+
+    return filterKeys.some((key) => params.has(key));
+};
+
+const resetCollectionFiltersAfterReload = () => {
+    if (!shouldResetCollectionFiltersAfterReload()) {
+        return false;
+    }
+
+    search.value = "";
+    activeCondition.value = "";
+    activeGender.value = "";
+    activeInDemand.value = "";
+    activeSort.value = "first_in";
+
+    router.get(
+        route("welcome"),
+        {},
+        {
+            preserveState: false,
+            preserveScroll: false,
+            replace: true,
+            only: ["watches", "filters", "transactions"],
+        },
+    );
+
+    return true;
+};
+
 onMounted(async () => {
+    if (resetCollectionFiltersAfterReload()) return;
+
+    // Always refresh public transactions when the Welcome page mounts.
+    // This prevents Inertia/browser history from restoring a stale transaction list
+    // after a transaction was hidden or shown from the admin page.
+    router.reload({
+        only: ["transactions"],
+        preserveState: true,
+        preserveScroll: true,
+    });
+
     if (!shopOpened.value || !isMobileViewport()) return;
 
     await nextTick();
@@ -560,7 +558,7 @@ const filterPayload = () => {
         condition: activeCondition.value || undefined,
         gender: activeGender.value || undefined,
         in_demand: activeInDemand.value || undefined,
-        sort: activeSort.value || "random",
+        sort: activeSort.value !== "first_in" ? activeSort.value : undefined,
     };
 };
 
@@ -574,7 +572,7 @@ const applyFilters = () => {
         preserveState: true,
         preserveScroll: true,
         replace: true,
-        only: ["watches", "filters"],
+        only: ["watches", "filters", "transactions"],
         onFinish: () => {
             window.setTimeout(() => {
                 if (filterRequestToken.value === requestToken) {
@@ -625,7 +623,7 @@ const clearCollectionFilters = () => {
     activeCondition.value = "";
     activeGender.value = "";
     activeInDemand.value = "";
-    activeSort.value = "random";
+    activeSort.value = "first_in";
     applyFilters();
 };
 
@@ -647,7 +645,7 @@ const clearFilterPill = (type) => {
     }
 
     if (type === "sort") {
-        activeSort.value = "random";
+        activeSort.value = "first_in";
     }
 
     applyFilters();
@@ -681,7 +679,7 @@ const goToWatchPage = (link) => {
         preserveState: true,
         preserveScroll: true,
         replace: true,
-        only: ["watches"],
+        only: ["watches", "transactions"],
         onSuccess: async () => {
             await nextTick();
             scrollToShopTop("smooth");
@@ -1223,7 +1221,7 @@ const messengerLink = (watch = null) => {
                                         class="w-full rounded-2xl border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-[#071923] focus:border-[#0b3a56] focus:ring-[#0b3a56] disabled:cursor-not-allowed disabled:opacity-70"
                                         @change="applyFilters"
                                     >
-                                        <option value="random" hidden>
+                                        <option value="first_in" hidden>
                                             Sort by
                                         </option>
 
@@ -2268,22 +2266,6 @@ const messengerLink = (watch = null) => {
 </template>
 
 <style scoped>
-@font-face {
-    font-family: "WGM Enduro";
-    src: url("/fonts/Enduro-Regular.woff2") format("woff2");
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: "WGM Enduro";
-    src: url("/fonts/Enduro-Bold.woff2") format("woff2");
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-}
-
 .hero-panel {
     overflow: hidden;
     backface-visibility: hidden;
@@ -3122,11 +3104,6 @@ button:hover .shop-now-icon {
 }
 
 .shop-grid-card-body {
-    --shop-card-font:
-        "WGM Enduro", "Avenir Next", Avenir, "Helvetica Neue", Arial,
-        ui-sans-serif, system-ui, sans-serif;
-
-    font-family: var(--shop-card-font);
     transition:
         transform 0.24s ease,
         color 0.24s ease;
@@ -3170,7 +3147,7 @@ button:hover .shop-now-icon {
     color: #071923;
     font-family: var(--shop-card-font);
     font-size: 1rem;
-    font-weight: 400;
+    font-weight: 600;
     line-height: 1.05;
     letter-spacing: 0.045em;
     font-variant-numeric: tabular-nums;
@@ -3187,7 +3164,7 @@ button:hover .shop-now-icon {
     color: #94a3b8;
     opacity: 0.94;
     font-size: 0.8rem;
-    font-weight: 400;
+    font-weight: 600;
     line-height: 1.05;
     letter-spacing: 0.02em;
 }
