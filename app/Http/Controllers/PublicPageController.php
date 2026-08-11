@@ -31,7 +31,7 @@ class PublicPageController extends Controller
         );
 
         $inDemand = trim((string) $request->input('in_demand', ''));
-        $sort = $this->normalizeSortFilter($request->input('sort', 'first_in'));
+        $sort = $this->normalizeSortFilter($request->input('sort', 'newest'));
 
         $hasGenderColumn = Schema::hasColumn('watches', 'gender');
         $hasCategoryColumn = Schema::hasColumn('watches', 'category');
@@ -76,15 +76,15 @@ class PublicPageController extends Controller
             ],
         ];
 
-        $heroWatches = Watch::query()
-            ->with($this->watchCardRelations())
-            ->whereIn('status', self::LISTED_STATUSES)
-            ->where('is_visible', true)
-            ->orderBy('id')
-            ->limit(5)
-            ->get()
-            ->map(fn ($watch) => $this->watchCard($watch))
-            ->values();
+       $heroWatches = Watch::query()
+        ->with($this->watchCardRelations())
+        ->whereIn('status', self::LISTED_STATUSES)
+        ->where('is_visible', true)
+        ->orderByDesc('id')
+        ->limit(5)
+        ->get()
+        ->map(fn ($watch) => $this->watchCard($watch))
+        ->values();
 
         $watchesQuery = Watch::query()
             ->with($this->watchCardRelations())
@@ -148,7 +148,8 @@ class PublicPageController extends Controller
             'condition' => $condition !== '' ? $condition : null,
             'gender' => $gender !== '' ? $gender : null,
             'in_demand' => $inDemand !== '' ? $inDemand : null,
-            'sort' => $sort !== 'first_in' ? $sort : null,
+            // 'sort' => $sort !== 'first_in' ? $sort : null,
+            'sort' => $sort !== 'newest' ? $sort : null,
         ])
             ->filter(fn ($value) => filled($value))
             ->all();
@@ -383,7 +384,7 @@ private function visibleTransactions()
             ->whereIn('status', self::LISTED_STATUSES)
             ->where('is_visible', true)
             ->where('id', '!=', $currentWatch->id)
-            ->orderBy('id')
+            ->orderByDesc('id')
             ->limit(10)
             ->get()
             ->map(fn ($watch) => $this->watchCard($watch))
@@ -481,56 +482,67 @@ private function visibleTransactions()
         return null;
     }
 
-    private function normalizeSortFilter($value): string
-    {
-        $value = strtolower(trim((string) $value));
+private function normalizeSortFilter($value): string
+{
+    $value = strtolower(trim((string) $value));
 
-        return match ($value) {
-            'newest', 'latest' => 'newest',
-            'price_low', 'price-low', 'low_to_high', 'low-to-high' => 'price_low',
-            'price_high', 'price-high', 'high_to_low', 'high-to-low' => 'price_high',
-            'in_demand', 'indemand', 'demand' => 'in_demand',
-            'first_in', 'first-in', 'oldest', 'oldest_first' => 'first_in',
-            default => 'first_in',
-        };
+    return match ($value) {
+        'price_low', 'price-low', 'low_to_high', 'low-to-high' => 'price_low',
+        'price_high', 'price-high', 'high_to_low', 'high-to-low' => 'price_high',
+        'in_demand', 'indemand', 'demand' => 'in_demand',
+
+        'first_in', 'first-in', 'oldest', 'oldest_first' => 'first_in',
+
+        'newest', 'latest' => 'newest',
+
+        default => 'newest',
+    };
+}
+
+  private function applyCollectionSort(
+    $query,
+    string $sort,
+    bool $hasInDemandColumn
+): void {
+    if ($sort === 'price_low') {
+        $query
+            ->orderByRaw(
+                'COALESCE(discounted_price, selling_price, 999999999) ASC'
+            )
+            ->orderByDesc('id');
+
+        return;
     }
 
-    private function applyCollectionSort($query, string $sort, bool $hasInDemandColumn): void
-    {
-        if ($sort === 'price_low') {
-            $query
-                ->orderByRaw('COALESCE(discounted_price, selling_price, 999999999) ASC')
-                ->orderBy('id');
+    if ($sort === 'price_high') {
+        $query
+            ->orderByRaw(
+                'COALESCE(discounted_price, selling_price, 0) DESC'
+            )
+            ->orderByDesc('id');
 
-            return;
+        return;
+    }
+
+    if ($sort === 'in_demand') {
+        if ($hasInDemandColumn) {
+            $query->orderByDesc('is_in_demand');
         }
 
-        if ($sort === 'price_high') {
-            $query
-                ->orderByRaw('COALESCE(discounted_price, selling_price, 0) DESC')
-                ->orderByDesc('id');
+        $query->orderByDesc('id');
 
-            return;
-        }
+        return;
+    }
 
-        if ($sort === 'in_demand') {
-            if ($hasInDemandColumn) {
-                $query->orderByDesc('is_in_demand');
-            }
-
-            $query->latest('id');
-
-            return;
-        }
-
-        if ($sort === 'newest') {
-            $query->latest('id');
-
-            return;
-        }
-
+    if ($sort === 'first_in') {
         $query->orderBy('id');
+
+        return;
     }
+
+    // Default: newest/latest entries first
+    $query->orderByDesc('id');
+}
 
     private function normalizeGenderFilter($value): string
     {

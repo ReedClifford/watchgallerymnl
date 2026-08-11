@@ -3147,10 +3147,10 @@ button:hover .shop-now-icon {
     color: #36454f;
     font-family: var(--shop-card-font);
     font-size: 1rem;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1.05;
     letter-spacing: 0.045em;
-    font-variant-numeric: proportional-nums;
+    /* font-variant-numeric: proportional-nums; */
 }
 
 .shop-card-srp-wrap {
