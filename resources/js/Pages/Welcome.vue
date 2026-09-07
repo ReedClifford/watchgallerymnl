@@ -3452,14 +3452,16 @@ button:hover .shop-now-icon {
 }
 
 .watch-badge-status-reserved {
-    border: 1px solid rgba(253, 230, 138, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.34);
+
     background: linear-gradient(
         135deg,
-        rgba(180, 83, 9, 0.94),
-        rgba(245, 158, 11, 0.64)
+        rgba(71, 85, 105, 0.95),
+        rgba(148, 163, 184, 0.7)
     );
+
     color: #ffffff;
-    text-shadow: 0 1px 10px rgba(120, 53, 15, 0.32);
+    text-shadow: 0 1px 10px rgba(15, 23, 42, 0.3);
 }
 
 .watch-badge-status-transit {
