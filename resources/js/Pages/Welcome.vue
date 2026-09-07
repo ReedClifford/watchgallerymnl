@@ -3443,8 +3443,8 @@ button:hover .shop-now-icon {
 
     background: linear-gradient(
         135deg,
-        rgba(180, 83, 9, 0.94),
-        rgba(245, 158, 11, 0.64)
+        rgba(14, 116, 144, 0.94),
+        rgba(59, 130, 246, 0.58)
     );
 
     color: #ffffff;
@@ -3468,8 +3468,8 @@ button:hover .shop-now-icon {
     border: 1px solid rgba(186, 230, 253, 0.55);
     background: linear-gradient(
         135deg,
-        rgba(14, 116, 144, 0.94),
-        rgba(59, 130, 246, 0.58)
+        rgba(148, 163, 184, 0.88),
+        rgba(203, 213, 225, 0.72)
     );
     color: #ffffff;
     text-shadow: 0 1px 10px rgba(8, 47, 73, 0.3);

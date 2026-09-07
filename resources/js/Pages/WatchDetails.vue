@@ -112,7 +112,7 @@ const watchStatusLabel = (status) => {
 
         reserved: "Reserved",
 
-        in_transit: "In Transit",
+        in_transit: "Incoming",
 
         sold: "Sold",
     };
@@ -1480,8 +1480,8 @@ const specs = computed(() => {
 
     background: linear-gradient(
         135deg,
-        rgba(5, 150, 105, 0.86),
-        rgba(16, 185, 129, 0.58)
+        rgba(14, 116, 144, 0.94),
+        rgba(59, 130, 246, 0.58)
     );
 }
 
@@ -1490,8 +1490,8 @@ const specs = computed(() => {
 
     background: linear-gradient(
         135deg,
-        rgba(180, 83, 9, 0.92),
-        rgba(245, 158, 11, 0.62)
+        rgba(71, 85, 105, 0.95),
+        rgba(148, 163, 184, 0.7)
     );
 }
 
@@ -1500,8 +1500,8 @@ const specs = computed(() => {
 
     background: linear-gradient(
         135deg,
-        rgba(14, 116, 144, 0.92),
-        rgba(59, 130, 246, 0.58)
+        rgba(148, 163, 184, 0.88),
+        rgba(203, 213, 225, 0.72)
     );
 }
 
