@@ -1500,8 +1500,8 @@ const specs = computed(() => {
 
     background: linear-gradient(
         135deg,
-        rgba(148, 163, 184, 0.88),
-        rgba(203, 213, 225, 0.72)
+        rgba(51, 65, 85, 0.96),
+        rgba(100, 116, 139, 0.78)
     );
 }
 
