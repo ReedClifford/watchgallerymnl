@@ -88,6 +88,13 @@ const basicFields = [
         required: false,
         type: "select",
     },
+    {
+        key: "category",
+        label: "Category",
+        placeholder: "",
+        required: false,
+        type: "select",
+    },
 ];
 
 const conditionOptions = [
@@ -98,6 +105,21 @@ const conditionOptions = [
     {
         value: "Pre-owned",
         label: "Pre-owned",
+    },
+];
+
+const categoryOptions = [
+    {
+        value: "daily_sporty",
+        label: "Daily / Sporty",
+    },
+    {
+        value: "dress",
+        label: "Dress",
+    },
+    {
+        value: "limited_edition",
+        label: "Limited Edition",
     },
 ];
 
@@ -302,6 +324,7 @@ const defaultForm = () => ({
     reference_number: "",
     release: "",
     condition: "Brand New",
+    category: "daily_sporty",
     gender: "unisex",
     description: "",
     movement: "",
@@ -575,6 +598,7 @@ const openEditModal = (watch) => {
         reference_number: watch.reference_number ?? "",
         release: watch.release ?? "",
         condition: normalizeConditionForForm(watch.condition),
+        category: watch.category ?? "daily_sporty",
         gender: watch.gender ?? "unisex",
         description: watch.description ?? "",
         movement: watch.movement ?? "",
@@ -2130,6 +2154,27 @@ const deleteWatch = async (watch) => {
                                                     >
                                                         <option
                                                             v-for="option in conditionOptions"
+                                                            :key="option.value"
+                                                            :value="
+                                                                option.value
+                                                            "
+                                                        >
+                                                            {{ option.label }}
+                                                        </option>
+                                                    </select>
+
+                                                    <select
+                                                        v-else-if="
+                                                            field.key ===
+                                                            'category'
+                                                        "
+                                                        v-model="
+                                                            form[field.key]
+                                                        "
+                                                        class="w-full rounded-2xl border-slate-200 bg-slate-50 text-[#071923] focus:border-[#0b3a56] focus:ring-[#0b3a56]"
+                                                    >
+                                                        <option
+                                                            v-for="option in categoryOptions"
                                                             :key="option.value"
                                                             :value="
                                                                 option.value

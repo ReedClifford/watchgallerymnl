@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Watch extends Model
 {
@@ -14,8 +14,8 @@ class Watch extends Model
         'model_name',
         'reference_number',
         'condition',
-            'release',
-
+        'category',
+        'release',
         'description',
         'movement',
         'case_size',

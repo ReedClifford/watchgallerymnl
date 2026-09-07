@@ -31,8 +31,8 @@ const props = defineProps({
             condition: "",
             gender: "",
             in_demand: "",
-            sort: "first_in",
-            category: "", // legacy fallback for old URLs/controllers
+            sort: "newest",
+            category: "",
         }),
     },
 });
@@ -81,7 +81,7 @@ const watchStatusLabel = (status) => {
     const labels = {
         available: "Available",
         reserved: "Reserved",
-        in_transit: "In Transit",
+        in_transit: "Incoming",
         sold: "Sold Out",
     };
 
@@ -124,6 +124,32 @@ const normalizeGender = (value) => {
     return normalized;
 };
 
+const normalizeCategory = (value) => {
+    const normalized = String(value ?? "")
+        .trim()
+        .toLowerCase()
+        .replace(/[\/\s-]+/g, "_")
+        .replace(/_+/g, "_");
+
+    if (
+        ["daily", "sporty", "daily_sporty", "daily_and_sporty"].includes(
+            normalized,
+        )
+    ) {
+        return "daily_sporty";
+    }
+
+    if (["limited", "limitededition", "limited_edition"].includes(normalized)) {
+        return "limited_edition";
+    }
+
+    if (normalized === "dress") {
+        return "dress";
+    }
+
+    return "";
+};
+
 const normalizeInDemand = (value) => {
     const normalized = normalizeFilterValue(value);
 
@@ -140,22 +166,20 @@ const normalizeInDemand = (value) => {
 
 const search = ref(props.filters?.search ?? "");
 const activeCondition = ref(normalizeCondition(props.filters?.condition ?? ""));
-const activeGender = ref(
-    normalizeGender(props.filters?.gender ?? props.filters?.category ?? ""),
-);
+const activeCategory = ref(normalizeCategory(props.filters?.category ?? ""));
+const activeGender = ref(normalizeGender(props.filters?.gender ?? ""));
 const activeInDemand = ref(normalizeInDemand(props.filters?.in_demand ?? ""));
-const activeSort = ref(props.filters?.sort ?? "first_in");
+const activeSort = ref(props.filters?.sort ?? "newest");
 
 watch(
     () => props.filters,
     (filters = {}) => {
         search.value = filters?.search ?? "";
         activeCondition.value = normalizeCondition(filters?.condition ?? "");
-        activeGender.value = normalizeGender(
-            filters?.gender ?? filters?.category ?? "",
-        );
+        activeCategory.value = normalizeCategory(filters?.category ?? "");
+        activeGender.value = normalizeGender(filters?.gender ?? "");
         activeInDemand.value = normalizeInDemand(filters?.in_demand ?? "");
-        activeSort.value = filters?.sort ?? "first_in";
+        activeSort.value = filters?.sort ?? "newest";
     },
     { deep: true },
 );
@@ -173,6 +197,21 @@ const conditionFilters = [
     {
         label: "Pre-owned",
         value: "pre_owned",
+    },
+];
+
+const categoryFilters = [
+    {
+        label: "Daily / Sporty",
+        value: "daily_sporty",
+    },
+    {
+        label: "Dress",
+        value: "dress",
+    },
+    {
+        label: "Limited Edition",
+        value: "limited_edition",
     },
 ];
 
@@ -214,9 +253,10 @@ const hasActiveCollectionFilters = computed(() => {
     return Boolean(
         search.value ||
         activeCondition.value ||
+        activeCategory.value ||
         activeGender.value ||
         activeInDemand.value ||
-        activeSort.value !== "first_in",
+        activeSort.value !== "newest",
     );
 });
 
@@ -238,6 +278,18 @@ const activeCollectionFilterPills = computed(() => {
 
         pills.push({
             type: "condition",
+            label,
+        });
+    }
+
+    if (activeCategory.value) {
+        const label =
+            categoryFilters.find(
+                (filter) => filter.value === activeCategory.value,
+            )?.label || activeCategory.value;
+
+        pills.push({
+            type: "category",
             label,
         });
     }
@@ -348,7 +400,16 @@ const heroPool = computed(() =>
     uniqueWatches([...(props.heroWatches ?? []), ...watchesData.value]),
 );
 
-const collageWatches = computed(() => heroPool.value.slice(0, 5));
+const categoryTiles = computed(() =>
+    categoryFilters.map((category) => ({
+        ...category,
+        watch:
+            heroPool.value.find(
+                (watch) =>
+                    normalizeCategory(watch?.category) === category.value,
+            ) ?? null,
+    })),
+);
 
 const hasAboutUs = computed(() => Boolean(props.aboutUs));
 
@@ -513,9 +574,10 @@ const resetCollectionFiltersAfterReload = () => {
 
     search.value = "";
     activeCondition.value = "";
+    activeCategory.value = "";
     activeGender.value = "";
     activeInDemand.value = "";
-    activeSort.value = "first_in";
+    activeSort.value = "newest";
 
     router.get(
         route("welcome"),
@@ -556,9 +618,10 @@ const filterPayload = () => {
     return {
         search: search.value?.trim() || undefined,
         condition: activeCondition.value || undefined,
+        category: activeCategory.value || undefined,
         gender: activeGender.value || undefined,
         in_demand: activeInDemand.value || undefined,
-        sort: activeSort.value !== "first_in" ? activeSort.value : undefined,
+        sort: activeSort.value !== "newest" ? activeSort.value : undefined,
     };
 };
 
@@ -601,6 +664,15 @@ const setConditionFilter = (value) => {
     applyFilters();
 };
 
+const setCategoryFilter = (value) => {
+    const normalized = normalizeCategory(value);
+
+    activeCategory.value =
+        activeCategory.value === normalized ? "" : normalized;
+
+    applyFilters();
+};
+
 const setGenderFilter = (value) => {
     const normalized = normalizeGender(value);
 
@@ -621,9 +693,10 @@ const setInDemandFilter = (value) => {
 const clearCollectionFilters = () => {
     search.value = "";
     activeCondition.value = "";
+    activeCategory.value = "";
     activeGender.value = "";
     activeInDemand.value = "";
-    activeSort.value = "first_in";
+    activeSort.value = "newest";
     applyFilters();
 };
 
@@ -636,6 +709,10 @@ const clearFilterPill = (type) => {
         activeCondition.value = "";
     }
 
+    if (type === "category") {
+        activeCategory.value = "";
+    }
+
     if (type === "gender") {
         activeGender.value = "";
     }
@@ -645,10 +722,54 @@ const clearFilterPill = (type) => {
     }
 
     if (type === "sort") {
-        activeSort.value = "first_in";
+        activeSort.value = "newest";
     }
 
     applyFilters();
+};
+
+const openCategoryFromCollage = (value) => {
+    const category = normalizeCategory(value);
+
+    if (!category || isFiltering.value) {
+        return;
+    }
+
+    search.value = "";
+    activeCondition.value = "";
+    activeCategory.value = category;
+    activeGender.value = "";
+    activeInDemand.value = "";
+    activeSort.value = "newest";
+    shopOpened.value = true;
+
+    const requestToken = filterRequestToken.value + 1;
+    filterRequestToken.value = requestToken;
+    isFiltering.value = true;
+
+    router.get(
+        route("welcome"),
+        {
+            category,
+        },
+        {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            only: ["watches", "filters", "transactions"],
+            onSuccess: async () => {
+                await nextTick();
+                scrollToShopTop("smooth");
+            },
+            onFinish: () => {
+                window.setTimeout(() => {
+                    if (filterRequestToken.value === requestToken) {
+                        isFiltering.value = false;
+                    }
+                }, 120);
+            },
+        },
+    );
 };
 
 const scrollToShopTop = (behavior = "smooth") => {
@@ -949,10 +1070,8 @@ const messengerLink = (watch = null) => {
                         </div>
                     </div>
 
-                    <button
-                        type="button"
-                        @click.prevent.stop="scrollToShop"
-                        class="group relative block w-full overflow-hidden rounded-[2rem] border border-[#0b3a56]/15 bg-white p-1 shadow-2xl shadow-slate-900/10 ring-1 ring-[#0b3a56]/5 transition active:scale-[0.99] sm:rounded-[2.5rem]"
+                    <div
+                        class="relative block w-full overflow-hidden rounded-[2rem] border border-[#0b3a56]/15 bg-white p-1 shadow-2xl shadow-slate-900/10 ring-1 ring-[#0b3a56]/5 sm:rounded-[2.5rem]"
                         :class="
                             isShopTransitioning &&
                             heroTransitionDirection === 'to-shop'
@@ -960,199 +1079,80 @@ const messengerLink = (watch = null) => {
                                 : ''
                         "
                     >
-                        <div v-if="collageWatches.length" class="collage-grid">
-                            <!-- Main Watch -->
-                            <article
-                                v-if="collageWatches[0]"
-                                class="collage-cell collage-main"
+                        <div class="collage-grid collage-category-grid">
+                            <button
+                                v-for="tile in categoryTiles"
+                                :key="tile.value"
+                                type="button"
+                                class="collage-cell collage-category-tile group text-left"
+                                :class="{
+                                    'collage-category-daily':
+                                        tile.value === 'daily_sporty',
+                                    'collage-category-dress':
+                                        tile.value === 'dress',
+                                    'collage-category-limited':
+                                        tile.value === 'limited_edition',
+                                }"
+                                @click="openCategoryFromCollage(tile.value)"
                             >
                                 <img
-                                    v-if="collageWatches[0].image_url"
-                                    :src="collageWatches[0].image_url"
-                                    :alt="collageWatches[0].model_name"
+                                    v-if="tile.watch && tile.watch.image_url"
+                                    :src="tile.watch.image_url"
+                                    :alt="`${tile.label} watches`"
                                     class="collage-img"
                                 />
 
                                 <div
                                     v-else
-                                    class="grid h-full w-full place-items-center bg-slate-100 text-sm text-slate-400"
+                                    class="grid h-full w-full place-items-center bg-gradient-to-br from-slate-100 via-white to-[#eef8fb] p-5 text-center"
                                 >
-                                    No Image
-                                </div>
-
-                                <div class="collage-gradient" />
-
-                                <div
-                                    class="collage-caption-main absolute bottom-0 left-0 right-0 p-4 text-left sm:p-6"
-                                >
-                                    <p
-                                        class="collage-caption-eyebrow text-[10px] font-black uppercase tracking-[0.25em] text-white/70"
-                                    >
-                                        Latest Drop
-                                    </p>
-
-                                    <h3
-                                        class="collage-caption-title mt-1 line-clamp-1 text-xl font-black text-white sm:text-2xl"
-                                    >
-                                        {{ collageWatches[0].model_name }}
-                                    </h3>
-
-                                    <p
-                                        class="collage-caption-price mt-2 text-sm font-black text-white"
-                                    >
-                                        {{
-                                            formatMoney(
-                                                collageWatches[0].display_price,
-                                            )
-                                        }}
-                                    </p>
-                                </div>
-                            </article>
-
-                            <!-- Small Watches -->
-                            <article
-                                v-for="(watch, index) in collageWatches.slice(
-                                    1,
-                                    4,
-                                )"
-                                :key="watch.id"
-                                class="collage-cell"
-                                :class="`collage-${index + 2}`"
-                            >
-                                <img
-                                    v-if="watch.image_url"
-                                    :src="watch.image_url"
-                                    :alt="watch.model_name"
-                                    class="collage-img"
-                                />
-
-                                <div
-                                    v-else
-                                    class="grid h-full w-full place-items-center bg-slate-100 text-sm text-slate-400"
-                                >
-                                    No Image
+                                    <div>
+                                        <p
+                                            class="text-[10px] font-black uppercase tracking-[0.22em] text-[#0b3a56]/60"
+                                        >
+                                            Watch Category
+                                        </p>
+                                        <p
+                                            class="mt-2 text-xl font-black text-[#071923]"
+                                        >
+                                            {{ tile.label }}
+                                        </p>
+                                    </div>
                                 </div>
 
                                 <div class="collage-gradient-small" />
 
                                 <div
-                                    class="collage-caption-small absolute bottom-0 left-0 right-0 p-3 text-left sm:p-4"
+                                    class="absolute bottom-0 left-0 right-0 z-10 p-4 text-left sm:p-6"
                                 >
-                                    <h3
-                                        class="collage-small-title line-clamp-1 text-sm font-black text-white sm:text-base"
+                                    <p
+                                        class="text-[10px] font-black uppercase tracking-[0.25em] text-white/70"
                                     >
-                                        {{ watch.model_name }}
+                                        Browse Category
+                                    </p>
+
+                                    <h3
+                                        class="mt-1 text-xl font-black leading-tight text-white sm:text-2xl"
+                                    >
+                                        {{ tile.label }}
                                     </h3>
 
                                     <p
-                                        class="collage-small-price mt-1 text-xs font-bold text-white/75"
+                                        class="mt-2 line-clamp-1 text-xs font-bold text-white/80 sm:text-sm"
                                     >
-                                        {{ formatMoney(watch.display_price) }}
+                                        {{
+                                            tile.watch && tile.watch.model_name
+                                                ? tile.watch.model_name +
+                                                  " · View collection →"
+                                                : "View collection →"
+                                        }}
                                     </p>
                                 </div>
-                            </article>
-
-                            <!-- More Card -->
-                            <article class="collage-cell collage-more">
-                                <template v-if="collageWatches[4]">
-                                    <img
-                                        v-if="collageWatches[4].image_url"
-                                        :src="collageWatches[4].image_url"
-                                        :alt="collageWatches[4].model_name"
-                                        class="collage-img collage-more-img"
-                                    />
-
-                                    <div
-                                        v-else
-                                        class="grid h-full w-full place-items-center bg-slate-100 text-sm text-slate-400"
-                                    >
-                                        No Image
-                                    </div>
-
-                                    <div
-                                        class="collage-more-overlay absolute inset-0 grid place-items-center text-center"
-                                    >
-                                        <div class="collage-more-content">
-                                            <p
-                                                class="collage-more-count text-4xl font-black text-white sm:text-5xl"
-                                            >
-                                                +{{
-                                                    Math.max(listedCount - 4, 0)
-                                                }}
-                                            </p>
-                                            <p
-                                                class="collage-more-label mt-1 text-xs font-black uppercase tracking-[0.25em] text-white/85"
-                                            >
-                                                More Watches
-                                            </p>
-                                        </div>
-                                    </div>
-                                </template>
-
-                                <template v-else>
-                                    <div
-                                        class="grid h-full w-full place-items-center bg-[#eef8fb] p-5 text-center"
-                                    >
-                                        <div>
-                                            <p
-                                                class="text-3xl font-black text-[#0b3a56]"
-                                            >
-                                                Shop
-                                            </p>
-                                            <p
-                                                class="mt-1 text-xs text-slate-500"
-                                            >
-                                                More watch listings
-                                            </p>
-                                        </div>
-                                    </div>
-                                </template>
-                            </article>
-                        </div>
-
-                        <div
-                            v-else
-                            class="grid h-[520px] place-items-center rounded-[1.75rem] bg-slate-50 text-center"
-                        >
-                            <div>
-                                <p
-                                    class="text-base font-black text-[#071923] sm:text-lg"
-                                >
-                                    No watch listings yet.
-                                </p>
-                                <p class="mt-2 text-sm text-slate-500">
-                                    Add watches from your admin inventory.
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Center CTA -->
-                        <div
-                            class="pointer-events-none absolute inset-0 z-20 flex items-center justify-center"
-                        >
-                            <div class="shop-now-button">
-                                <div class="shop-now-shine" />
-
-                                <div
-                                    class="relative z-10 flex items-center gap-4"
-                                >
-                                    <div class="text-left">
-                                        <span class="shop-now-eyebrow">
-                                            Latest Collection
-                                        </span>
-
-                                        <span class="shop-now-main">
-                                            Shop Now
-                                        </span>
-                                    </div>
-
-                                    <span class="shop-now-icon">→</span>
-                                </div>
-                            </div>
+                            </button>
                         </div>
 
                         <div class="shop-transition-flash" />
-                    </button>
+                    </div>
                 </div>
             </section>
 
@@ -1178,7 +1178,7 @@ const messengerLink = (watch = null) => {
                                         v-if="shopOpened"
                                         type="button"
                                         @click="showHeroAgain"
-                                        class="mb-3 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-500 transition hover:border-[#0b3a56]/30 hover:bg-[#eef8fb] hover:text-[#0b3a56]"
+                                        class="mb-3 rounded-full border border-slate-200 bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] px-4 py-2 text-xs font-black text-white transition hover:border-[#0b3a56]/30 hover:bg-[#eef8fb] hover:text-[#ffff]"
                                     >
                                         ← Back to collage
                                     </button>
@@ -1221,7 +1221,7 @@ const messengerLink = (watch = null) => {
                                         class="w-full rounded-2xl border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-[#071923] focus:border-[#0b3a56] focus:ring-[#0b3a56] disabled:cursor-not-allowed disabled:opacity-70"
                                         @change="applyFilters"
                                     >
-                                        <option value="first_in" hidden>
+                                        <option value="" disabled hidden>
                                             Sort by
                                         </option>
 
@@ -1286,7 +1286,7 @@ const messengerLink = (watch = null) => {
 
                             <!-- Collection Filters -->
                             <div
-                                class="mt-5 grid gap-4 border-t border-slate-100 pt-4 lg:grid-cols-3"
+                                class="mt-5 grid gap-4 border-t border-slate-100 pt-4 lg:grid-cols-4"
                             >
                                 <div>
                                     <p
@@ -1321,6 +1321,48 @@ const messengerLink = (watch = null) => {
                                             class="collection-filter-chip"
                                             :class="
                                                 activeCondition === filter.value
+                                                    ? 'collection-filter-chip-active'
+                                                    : ''
+                                            "
+                                        >
+                                            {{ filter.label }}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p
+                                        class="mb-2 text-[10px] font-black uppercase tracking-[0.26em] text-slate-400"
+                                    >
+                                        Category
+                                    </p>
+
+                                    <div class="flex flex-wrap gap-2">
+                                        <button
+                                            type="button"
+                                            :disabled="isFiltering"
+                                            @click="setCategoryFilter('')"
+                                            class="collection-filter-chip"
+                                            :class="
+                                                activeCategory === ''
+                                                    ? 'collection-filter-chip-active'
+                                                    : ''
+                                            "
+                                        >
+                                            All
+                                        </button>
+
+                                        <button
+                                            v-for="filter in categoryFilters"
+                                            :key="filter.value"
+                                            type="button"
+                                            :disabled="isFiltering"
+                                            @click="
+                                                setCategoryFilter(filter.value)
+                                            "
+                                            class="collection-filter-chip"
+                                            :class="
+                                                activeCategory === filter.value
                                                     ? 'collection-filter-chip-active'
                                                     : ''
                                             "
@@ -1610,7 +1652,7 @@ const messengerLink = (watch = null) => {
                                 <p
                                     class="text-base font-black text-[#071923] sm:text-lg"
                                 >
-                                    No matching watches found.
+                                    Can’t find what you’re looking for?
                                 </p>
                                 <p class="mt-2 text-sm text-slate-500">
                                     Try clearing your search or message us
@@ -1621,9 +1663,20 @@ const messengerLink = (watch = null) => {
                                     :href="messengerLink()"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    class="mt-6 inline-flex rounded-2xl bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] px-5 py-3 text-sm font-black text-white shadow-lg shadow-[#0b3a56]/15 transition hover:brightness-110"
+                                    class="mt-6 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] px-5 py-3 text-sm font-black text-white shadow-lg shadow-[#0b3a56]/15 transition hover:brightness-110"
                                 >
-                                    Message Us
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        aria-hidden="true"
+                                        class="h-5 w-5"
+                                        fill="currentColor"
+                                    >
+                                        <path
+                                            d="M12 2.25c-5.37 0-9.75 4.03-9.75 9 0 2.82 1.41 5.32 3.62 6.97v3.16c0 .33.37.52.64.33l2.9-2.03c.82.23 1.69.36 2.59.36 5.37 0 9.75-4.03 9.75-9s-4.38-8.79-9.75-8.79Zm.98 12.14-2.48-2.65-4.84 2.65 5.31-5.64 2.54 2.65 4.77-2.65-5.3 5.64Z"
+                                        />
+                                    </svg>
+
+                                    <span>Message Us</span>
                                 </a>
                             </div>
 
@@ -3386,14 +3439,16 @@ button:hover .shop-now-icon {
 }
 
 .watch-badge-status-available {
-    border: 1px solid rgba(255, 255, 255, 0.36);
+    border: 1px solid rgba(255, 255, 255, 0.42);
+
     background: linear-gradient(
         135deg,
-        rgba(11, 58, 86, 0.88),
-        rgba(59, 130, 246, 0.38)
+        rgba(74, 160, 105, 0.9),
+        rgba(134, 239, 172, 0.62)
     );
+
     color: #ffffff;
-    text-shadow: 0 1px 10px rgba(7, 25, 35, 0.28);
+    text-shadow: 0 1px 8px rgba(7, 25, 35, 0.22);
 }
 
 .watch-badge-status-reserved {
@@ -4093,5 +4148,39 @@ button:hover .shop-now-icon {
         animation: none !important;
         transition: none !important;
     }
+}
+
+.collage-grid.collage-category-grid {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    grid-template-rows: 1fr 1fr;
+    grid-template-areas:
+        "daily dress"
+        "daily limited";
+}
+
+.collage-category-daily {
+    grid-area: daily;
+}
+
+.collage-category-dress {
+    grid-area: dress;
+}
+
+.collage-category-limited {
+    grid-area: limited;
+}
+
+.collage-category-tile {
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+}
+
+.collage-category-tile:focus-visible {
+    outline: 3px solid rgba(11, 58, 86, 0.35);
+    outline-offset: -3px;
+    z-index: 5;
 }
 </style>

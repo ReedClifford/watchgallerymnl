@@ -1,6 +1,8 @@
 <script setup>
 import { computed, ref, watch } from "vue";
+
 import { Head, Link } from "@inertiajs/vue3";
+
 import { usePageTracker } from "@/Composables/usePageTracker";
 
 const navbarLogo = "/images/WGM.png";
@@ -8,15 +10,19 @@ const navbarLogo = "/images/WGM.png";
 const props = defineProps({
     watch: {
         type: Object,
+
         required: true,
     },
+
     otherWatches: {
         type: Array,
+
         default: () => [],
     },
 });
 
 const activeImageIndex = ref(0);
+
 const otherWatchesStrip = ref(null);
 
 const compactOtherWatches = computed(() => {
@@ -36,6 +42,7 @@ const displayWatchName = computed(() => {
 
 usePageTracker({
     pageType: "watch_details",
+
     pageTitle:
         `${props.watch.brand || ""} ${displayWatchName.value || ""}`.trim() ||
         "Watch Details",
@@ -53,6 +60,7 @@ const inclusionText = computed(() => {
 const watchDescription = computed(() => {
     return String(props.watch.description || "").trim();
 });
+
 const images = computed(() => {
     if (Array.isArray(props.watch.images) && props.watch.images.length) {
         return props.watch.images;
@@ -62,7 +70,9 @@ const images = computed(() => {
         return [
             {
                 id: "primary",
+
                 image_url: props.watch.image_url,
+
                 is_primary: true,
             },
         ];
@@ -78,11 +88,15 @@ const activeImage = computed(() => {
 const normalizeWatchStatus = (status) => {
     const normalized = String(status || "")
         .trim()
+
         .toLowerCase()
+
         .replace(/[\s-]+/g, "_");
 
     if (["sold"].includes(normalized)) return "sold";
+
     if (["reserved"].includes(normalized)) return "reserved";
+
     if (["in_transit", "intransit", "transit"].includes(normalized)) {
         return "in_transit";
     }
@@ -95,8 +109,11 @@ const watchStatusLabel = (status) => {
 
     const labels = {
         available: "Available",
+
         reserved: "Reserved",
+
         in_transit: "In Transit",
+
         sold: "Sold",
     };
 
@@ -108,8 +125,11 @@ const watchStatusBadgeClass = (status) => {
 
     const classes = {
         available: "status-badge-available",
+
         reserved: "status-badge-reserved",
+
         in_transit: "status-badge-transit",
+
         sold: "status-badge-sold",
     };
 
@@ -121,8 +141,11 @@ const bottomWatchStatusClass = (status) => {
 
     const classes = {
         available: "bottom-watch-status-available",
+
         reserved: "bottom-watch-status-reserved",
+
         in_transit: "bottom-watch-status-transit",
+
         sold: "bottom-watch-status-sold",
     };
 
@@ -132,12 +155,15 @@ const bottomWatchStatusClass = (status) => {
 const mainWatchStatus = computed(() =>
     normalizeWatchStatus(props.watch.status),
 );
+
 const mainWatchStatusLabel = computed(() =>
     watchStatusLabel(mainWatchStatus.value),
 );
+
 const mainWatchStatusClass = computed(() =>
     watchStatusBadgeClass(mainWatchStatus.value),
 );
+
 const priceLabel = computed(() =>
     mainWatchStatus.value === "sold" ? "Sold Price" : "Listed Price",
 );
@@ -147,18 +173,28 @@ const actualWatchPrice = computed(() => {
         mainWatchStatus.value === "sold"
             ? [
                   props.watch.sold_price,
+
                   props.watch.actual_price,
+
                   props.watch.display_price,
+
                   props.watch.discounted_price,
+
                   props.watch.selling_price,
+
                   props.watch.price,
               ]
             : [
                   props.watch.actual_price,
+
                   props.watch.discounted_price,
+
                   props.watch.selling_price,
+
                   props.watch.price,
+
                   props.watch.display_price,
+
                   props.watch.sold_price,
               ];
 
@@ -178,18 +214,28 @@ const otherWatchPrice = (item) => {
         status === "sold"
             ? [
                   item.sold_price,
+
                   item.actual_price,
+
                   item.display_price,
+
                   item.discounted_price,
+
                   item.selling_price,
+
                   item.price,
               ]
             : [
                   item.actual_price,
+
                   item.display_price,
+
                   item.discounted_price,
+
                   item.selling_price,
+
                   item.price,
+
                   item.sold_price,
               ];
 
@@ -205,13 +251,18 @@ const otherWatchSrp = (item) => {
 const conditionLabel = (condition) => {
     const normalized = String(condition || "")
         .trim()
+
         .toLowerCase()
+
         .replace(/[\s-]+/g, "_");
 
     const labels = {
         brand_new: "Brand New",
+
         pre_owned: "Pre-owned",
+
         preowned: "Pre-owned",
+
         used: "Pre-owned",
     };
 
@@ -227,7 +278,9 @@ const formatMoney = (value) => {
 
     return new Intl.NumberFormat("en-PH", {
         style: "currency",
+
         currency: "PHP",
+
         maximumFractionDigits: 0,
     }).format(amount);
 };
@@ -257,18 +310,21 @@ const scrollOtherWatches = (direction = 1) => {
         left:
             direction *
             Math.min(otherWatchesStrip.value.clientWidth * 0.82, 560),
+
         behavior: "smooth",
     });
 };
 
 watch(
     () => props.watch.id,
+
     () => {
         activeImageIndex.value = 0;
 
         requestAnimationFrame(() => {
             otherWatchesStrip.value?.scrollTo({
                 left: 0,
+
                 behavior: "smooth",
             });
         });
@@ -285,54 +341,79 @@ const specs = computed(() => {
     return [
         {
             label: "Brand",
+
             value: props.watch.brand,
         },
+
         {
             label: "Reference",
+
             value: props.watch.reference_number,
         },
+
         {
             label: "Release",
+
             value: props.watch.release,
         },
+
         {
             label: "Condition",
+
             value: props.watch.condition,
         },
+
         {
             label: "Category",
+
             value: props.watch.category,
         },
+
         {
             label: "Movement",
+
             value: props.watch.movement,
         },
+
         {
             label: "Case Size",
+
             value: props.watch.case_size,
         },
+
         {
             label: "Case Material",
+
             value: props.watch.case_material,
         },
+
         {
             label: "Dial Color",
+
             value: props.watch.dial_color,
         },
+
         {
             label: "Crystal",
+
             value: props.watch.crystal,
         },
+
         {
             label: "Bracelet / Strap",
+
             value: props.watch.bracelet_or_strap,
         },
+
         {
             label: "Water Resistance",
+
             value: props.watch.water_resistance,
         },
+
         {
             label: "Warranty",
+
             value: props.watch.warranty_type,
         },
     ].filter((item) => item.value);
@@ -344,6 +425,7 @@ const specs = computed(() => {
 
     <div class="min-h-screen bg-[#f8fafc] pb-6 text-[#071923]">
         <!-- Header -->
+
         <header
             class="sticky top-0 z-50 border-b border-white/10 bg-gradient-to-r from-[#061725] via-[#0b3a56] to-[#071923] shadow-xl shadow-slate-900/15"
         >
@@ -351,6 +433,7 @@ const specs = computed(() => {
                 class="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:h-[86px] sm:px-6 lg:px-8"
             >
                 <!-- Logo Only -->
+
                 <Link
                     href="/"
                     class="group flex shrink-0 items-center"
@@ -368,6 +451,7 @@ const specs = computed(() => {
                     class="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-[11px] font-black text-white shadow-lg shadow-black/10 backdrop-blur-xl transition hover:bg-white hover:text-[#071923] active:scale-95 sm:px-5 sm:py-2.5 sm:text-sm"
                 >
                     ← Back
+
                     <span class="hidden sm:inline"> to Collection</span>
                 </Link>
             </div>
@@ -375,6 +459,7 @@ const specs = computed(() => {
 
         <main class="relative">
             <!-- Background -->
+
             <div class="pointer-events-none fixed inset-0 overflow-hidden">
                 <div
                     class="absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(11,58,86,0.11),transparent_32%),radial-gradient(circle_at_90%_10%,rgba(15,23,42,0.07),transparent_30%),linear-gradient(180deg,#ffffff_0%,#f8fafc_48%,#ffffff_100%)]"
@@ -388,6 +473,7 @@ const specs = computed(() => {
                     class="grid gap-4 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch"
                 >
                     <!-- Image Carousel -->
+
                     <div
                         class="watch-detail-panel overflow-hidden rounded-[1.45rem] border border-slate-200 bg-white p-1.5 shadow-xl shadow-[#0b3a56]/8 sm:rounded-[2.5rem] sm:p-2 sm:shadow-2xl sm:shadow-[#0b3a56]/10 lg:flex lg:flex-col"
                     >
@@ -456,6 +542,7 @@ const specs = computed(() => {
                         </div>
 
                         <!-- Thumbnails -->
+
                         <div
                             v-if="images.length > 1"
                             class="mt-1.5 flex gap-1.5 overflow-x-auto pb-1 sm:mt-2 sm:gap-2"
@@ -482,10 +569,12 @@ const specs = computed(() => {
                     </div>
 
                     <!-- Details -->
+
                     <div
                         class="watch-detail-panel overflow-hidden rounded-[1.45rem] border border-slate-200 bg-white shadow-xl shadow-[#0b3a56]/8 sm:rounded-[2.5rem] sm:shadow-2xl sm:shadow-[#0b3a56]/10 lg:flex lg:flex-col"
                     >
                         <!-- Main Info -->
+
                         <div
                             class="relative overflow-hidden bg-gradient-to-br from-[#061725] via-[#0b3a56] to-[#071923] p-4 text-white sm:p-6"
                         >
@@ -495,6 +584,7 @@ const specs = computed(() => {
 
                             <div class="relative z-10">
                                 <!-- Status Row -->
+
                                 <div
                                     class="mb-3 flex flex-wrap items-center gap-1.5"
                                 >
@@ -503,6 +593,7 @@ const specs = computed(() => {
                                         :class="mainWatchStatusClass"
                                     >
                                         <span class="status-badge-dot"></span>
+
                                         {{ mainWatchStatusLabel }}
                                     </span>
 
@@ -522,10 +613,12 @@ const specs = computed(() => {
                                 </div>
 
                                 <!-- Main Product Card -->
+
                                 <div
                                     class="overflow-hidden rounded-[1.45rem] border border-white/10 bg-white/[0.075] shadow-2xl shadow-black/15 backdrop-blur-xl"
                                 >
                                     <!-- Product Header -->
+
                                     <div
                                         class="relative overflow-hidden px-4 py-4 sm:px-5 sm:py-5"
                                     >
@@ -574,6 +667,7 @@ const specs = computed(() => {
                                                             class="inline-flex rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.16em] text-white/55"
                                                         >
                                                             Ref.
+
                                                             {{
                                                                 watch.reference_number
                                                             }}
@@ -596,6 +690,7 @@ const specs = computed(() => {
                                     </div>
 
                                     <!-- Price and Inclusions -->
+
                                     <div
                                         class="border-t border-white/10 p-3 sm:p-4"
                                     >
@@ -608,6 +703,7 @@ const specs = computed(() => {
                                             "
                                         >
                                             <!-- Price Card -->
+
                                             <div
                                                 class="relative overflow-hidden rounded-[1.25rem] border border-white/10 bg-white/[0.09] p-4 shadow-inner shadow-white/5"
                                             >
@@ -650,6 +746,7 @@ const specs = computed(() => {
                                                             class="mb-1 text-sm font-bold leading-none text-white/40 line-through decoration-white/40 decoration-1"
                                                         >
                                                             SRP
+
                                                             {{
                                                                 formatMoney(
                                                                     suggestedSrp,
@@ -661,6 +758,7 @@ const specs = computed(() => {
                                             </div>
 
                                             <!-- Inclusions Card -->
+
                                             <div
                                                 v-if="inclusionText"
                                                 class="relative overflow-hidden rounded-[1.25rem] border border-white/10 bg-white/[0.09] p-4 shadow-inner shadow-white/5"
@@ -718,6 +816,7 @@ const specs = computed(() => {
                                 </div>
 
                                 <!-- CTA -->
+
                                 <div class="mt-3">
                                     <a
                                         :href="messengerLink"
@@ -753,6 +852,7 @@ const specs = computed(() => {
                         </div>
 
                         <!-- Compact Details -->
+
                         <div class="p-3.5 sm:p-7 lg:flex-1">
                             <div>
                                 <div
@@ -786,6 +886,7 @@ const specs = computed(() => {
                 </div>
 
                 <!-- Watch Description from watches.description -->
+
                 <section
                     v-if="watchDescription"
                     class="mt-4 overflow-hidden rounded-[1.15rem] border border-slate-200/80 bg-white/95 p-4 shadow-md shadow-[#0b3a56]/5 backdrop-blur-xl sm:mt-8 sm:rounded-[1.35rem] sm:p-6"
@@ -816,6 +917,7 @@ const specs = computed(() => {
                 </section>
 
                 <!-- Premium Bottom Watch Cards -->
+
                 <section
                     v-if="compactOtherWatches.length"
                     class="mt-4 overflow-visible rounded-[1.15rem] border border-slate-200/80 bg-white/90 p-2.5 shadow-md shadow-[#0b3a56]/5 backdrop-blur-xl sm:mt-8 sm:rounded-[1.35rem] sm:p-4"
@@ -838,17 +940,21 @@ const specs = computed(() => {
                         </div>
 
                         <!-- Mobile Swipe Cue -->
+
                         <div
                             class="flex shrink-0 items-center gap-1.5 sm:hidden"
                         >
                             <span class="mobile-swipe-cue">
                                 <span class="mobile-swipe-dot" />
+
                                 Swipe
+
                                 <span class="mobile-swipe-cue-arrow">→</span>
                             </span>
                         </div>
 
                         <!-- Desktop Arrows -->
+
                         <div
                             class="hidden shrink-0 items-center gap-1.5 sm:flex"
                         >
@@ -929,6 +1035,7 @@ const specs = computed(() => {
 
                                     <div class="bottom-watch-view">
                                         <span>View details</span>
+
                                         <span aria-hidden="true">→</span>
                                     </div>
                                 </div>
@@ -968,6 +1075,7 @@ const specs = computed(() => {
                                             class="bottom-watch-srp"
                                         >
                                             SRP
+
                                             {{
                                                 formatMoney(otherWatchSrp(item))
                                             }}
@@ -1034,80 +1142,121 @@ const specs = computed(() => {
 <style scoped>
 @font-face {
     font-family: "WGM Enduro";
+
     src: url("/fonts/Enduro-Regular.woff2") format("woff2");
+
     font-style: normal;
+
     font-weight: 400;
+
     font-display: swap;
 }
 
 @font-face {
     font-family: "WGM Enduro";
+
     src: url("/fonts/Enduro-Bold.woff2") format("woff2");
+
     font-style: normal;
+
     font-weight: 700;
+
     font-display: swap;
 }
 
 .main-watch-release {
     margin-top: 0.48rem;
+
     overflow: hidden;
+
     color: rgba(255, 255, 255, 0.56);
+
     font-family:
         "WGM Enduro", "Avenir Next", Avenir, "Helvetica Neue", Arial,
         ui-sans-serif, system-ui, sans-serif;
+
     font-size: 0.82rem;
+
     font-style: normal;
+
     font-weight: 400;
+
     line-height: 1.08;
+
     letter-spacing: 0.025em;
+
     text-overflow: ellipsis;
+
     white-space: nowrap;
 }
 
 .status-badge {
     display: inline-flex;
+
     align-items: center;
+
     gap: 0.38rem;
+
     border-radius: 999px;
+
     padding: 0.42rem 0.72rem;
+
     font-size: 0.5rem;
+
     font-weight: 950;
+
     letter-spacing: 0.18em;
+
     line-height: 1;
+
     text-transform: uppercase;
+
     backdrop-filter: blur(18px);
+
     -webkit-backdrop-filter: blur(18px);
 }
 
 .status-badge-dot {
     height: 0.38rem;
+
     width: 0.38rem;
+
     border-radius: 999px;
+
     background: currentColor;
+
     box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.12);
 }
 
 .status-badge-available {
     border: 1px solid rgba(110, 231, 183, 0.24);
+
     background: rgba(110, 231, 183, 0.1);
+
     color: #a7f3d0;
 }
 
 .status-badge-reserved {
     border: 1px solid rgba(253, 230, 138, 0.28);
+
     background: rgba(245, 158, 11, 0.14);
+
     color: #fde68a;
 }
 
 .status-badge-transit {
     border: 1px solid rgba(186, 230, 253, 0.28);
+
     background: rgba(14, 165, 233, 0.14);
+
     color: #bae6fd;
 }
 
 .status-badge-sold {
     border: 1px solid rgba(203, 213, 225, 0.26);
+
     background: rgba(15, 23, 42, 0.34);
+
     color: #e2e8f0;
 }
 
@@ -1119,16 +1268,23 @@ const specs = computed(() => {
 
 .spec-compact-grid {
     display: grid;
+
     grid-template-columns: repeat(2, minmax(0, 1fr));
+
     gap: 0.5rem;
 }
 
 .spec-compact-card {
     min-height: 3.4rem;
+
     border-radius: 0.95rem;
+
     border: 1px solid rgba(226, 232, 240, 0.95);
+
     background: rgba(248, 250, 252, 0.92);
+
     padding: 0.65rem 0.7rem;
+
     box-shadow:
         0 6px 16px rgba(15, 23, 42, 0.035),
         inset 0 1px 0 rgba(255, 255, 255, 0.85);
@@ -1136,29 +1292,45 @@ const specs = computed(() => {
 
 .spec-compact-label {
     overflow: hidden;
+
     text-overflow: ellipsis;
+
     white-space: nowrap;
+
     font-size: 0.47rem;
+
     font-weight: 950;
+
     letter-spacing: 0.18em;
+
     text-transform: uppercase;
+
     color: #94a3b8;
 }
 
 .spec-compact-value {
     margin-top: 0.22rem;
+
     overflow: hidden;
+
     text-overflow: ellipsis;
+
     white-space: nowrap;
+
     font-size: 0.78rem;
+
     font-weight: 900;
+
     line-height: 1.15;
+
     color: #071923;
 }
 
 .bottom-watch-strip {
     scrollbar-width: none;
+
     scroll-padding-left: 0.25rem;
+
     -ms-overflow-style: none;
 }
 
@@ -1168,18 +1340,31 @@ const specs = computed(() => {
 
 .bottom-watch-card {
     position: relative;
+
     width: 188px;
+
     max-width: 188px;
+
     flex: 0 0 188px;
+
     scroll-snap-align: start;
+
     overflow: hidden;
+
     border-radius: 1.22rem;
+
     background: #ffffff;
+
     color: inherit;
+
     text-decoration: none;
+
     box-shadow: 0 18px 48px rgba(15, 23, 42, 0.1);
+
     outline: none;
+
     -webkit-tap-highlight-color: transparent;
+
     transition:
         transform 0.26s ease,
         box-shadow 0.26s ease;
@@ -1187,6 +1372,7 @@ const specs = computed(() => {
 
 .bottom-watch-card:hover {
     transform: translateY(-4px);
+
     box-shadow: 0 26px 64px rgba(11, 58, 86, 0.17);
 }
 
@@ -1198,9 +1384,13 @@ const specs = computed(() => {
 
 .bottom-watch-media {
     position: relative;
+
     aspect-ratio: 4 / 5;
+
     overflow: hidden;
+
     border-radius: 1.22rem 1.22rem 0 0;
+
     background: #f1f5f9;
 }
 
@@ -1210,8 +1400,11 @@ const specs = computed(() => {
 
 .bottom-watch-image {
     height: 100%;
+
     width: 100%;
+
     object-fit: cover;
+
     transition: transform 0.72s ease;
 }
 
@@ -1221,31 +1414,52 @@ const specs = computed(() => {
 
 .bottom-watch-badges {
     position: absolute;
+
     left: 0.72rem;
+
     right: 0.72rem;
+
     top: 0.72rem;
+
     z-index: 20;
+
     display: flex;
+
     flex-wrap: wrap;
+
     gap: 0.42rem;
 }
 
 .bottom-watch-pill,
 .bottom-watch-demand {
     display: inline-flex;
+
     align-items: center;
+
     justify-content: center;
+
     white-space: nowrap;
+
     border-radius: 999px;
+
     padding: 0.42rem 0.62rem;
+
     color: #ffffff;
+
     font-size: 0.52rem;
+
     font-weight: 950;
+
     letter-spacing: 0.07em;
+
     line-height: 1;
+
     text-transform: uppercase;
+
     backdrop-filter: blur(18px) saturate(165%);
+
     -webkit-backdrop-filter: blur(18px) saturate(165%);
+
     box-shadow:
         0 10px 24px rgba(15, 23, 42, 0.16),
         inset 0 1px 0 rgba(255, 255, 255, 0.3);
@@ -1253,6 +1467,7 @@ const specs = computed(() => {
 
 .bottom-watch-pill {
     border: 1px solid rgba(255, 255, 255, 0.38);
+
     background: linear-gradient(
         135deg,
         rgba(11, 58, 86, 0.72),
@@ -1262,6 +1477,7 @@ const specs = computed(() => {
 
 .bottom-watch-status-available {
     border-color: rgba(110, 231, 183, 0.42);
+
     background: linear-gradient(
         135deg,
         rgba(5, 150, 105, 0.86),
@@ -1271,6 +1487,7 @@ const specs = computed(() => {
 
 .bottom-watch-status-reserved {
     border-color: rgba(253, 230, 138, 0.52);
+
     background: linear-gradient(
         135deg,
         rgba(180, 83, 9, 0.92),
@@ -1280,6 +1497,7 @@ const specs = computed(() => {
 
 .bottom-watch-status-transit {
     border-color: rgba(186, 230, 253, 0.52);
+
     background: linear-gradient(
         135deg,
         rgba(14, 116, 144, 0.92),
@@ -1289,6 +1507,7 @@ const specs = computed(() => {
 
 .bottom-watch-status-sold {
     border-color: rgba(203, 213, 225, 0.52);
+
     background: linear-gradient(
         135deg,
         rgba(7, 25, 35, 0.95),
@@ -1298,6 +1517,7 @@ const specs = computed(() => {
 
 .bottom-watch-demand {
     border: 1px solid rgba(254, 202, 202, 0.5);
+
     background: linear-gradient(
         135deg,
         rgba(220, 38, 38, 0.9),
@@ -1307,24 +1527,43 @@ const specs = computed(() => {
 
 .bottom-watch-view {
     position: absolute;
+
     left: 0.72rem;
+
     right: 0.72rem;
+
     bottom: 0.72rem;
+
     z-index: 22;
+
     display: inline-flex;
+
     align-items: center;
+
     justify-content: center;
+
     gap: 0.35rem;
+
     border-radius: 0.82rem;
+
     background: rgba(255, 255, 255, 0.96);
+
     padding: 0.72rem 0.9rem;
+
     color: #071923;
+
     font-size: 0.72rem;
+
     font-weight: 950;
+
     letter-spacing: -0.01em;
+
     opacity: 0;
+
     box-shadow: 0 16px 34px rgba(15, 23, 42, 0.18);
+
     transform: translateY(10px);
+
     transition:
         opacity 0.24s ease,
         transform 0.24s ease,
@@ -1334,13 +1573,14 @@ const specs = computed(() => {
 .bottom-watch-card:hover .bottom-watch-view,
 .bottom-watch-card:focus-visible .bottom-watch-view {
     opacity: 1;
+
     transform: translateY(0);
 }
 
 .bottom-watch-body {
     --bottom-watch-font:
-        "WGM Enduro", "Avenir Next", Avenir, "Helvetica Neue", Arial,
-        ui-sans-serif, system-ui, sans-serif;
+        ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+        "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 
     display: flex;
     min-height: 6.65rem;
@@ -1357,35 +1597,40 @@ const specs = computed(() => {
     min-height: 2.55rem;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
+
+    color: #36454f;
     font-family: var(--bottom-watch-font);
-    font-size: 1.02rem;
+    font-size: 1rem;
     font-weight: 700;
-    line-height: 1.12;
+    line-height: 1.08;
     letter-spacing: -0.015em;
-    color: #222222;
+    text-wrap: balance;
     transition: color 0.24s ease;
 }
 
 .bottom-watch-release {
-    margin-top: 0.24rem;
+    margin: 0.22rem 0 0;
     overflow: hidden;
-    color: #71717a;
+
+    color: #64748b;
     font-family: var(--bottom-watch-font);
-    font-size: 0.74rem;
+    font-size: 0.8rem;
     font-style: normal;
-    font-weight: 700;
+    font-weight: 400;
     line-height: 1.05;
-    letter-spacing: 0.018em;
+    letter-spacing: 0.015em;
+
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.bottom-watch-card:hover .bottom-watch-title {
-    color: #222222;
+.bottom-watch-card:hover .bottom-watch-title,
+.bottom-watch-card:focus-visible .bottom-watch-title {
+    color: #0b3a56;
 }
 
 .bottom-watch-price-row {
-    margin-top: 0.75rem;
+    margin-top: 0.58rem;
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
@@ -1393,44 +1638,59 @@ const specs = computed(() => {
 }
 
 .bottom-watch-price {
+    margin: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+
+    color: #36454f;
     font-family: var(--bottom-watch-font);
-    font-size: 1.14rem;
+    font-size: 1rem;
     font-weight: 700;
-    line-height: 1;
-    letter-spacing: 0.04em;
-    color: #111827;
+    line-height: 1.05;
+    letter-spacing: 0.045em;
 }
 
 .bottom-watch-srp {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+
+    color: #94a3b8;
     font-family: var(--bottom-watch-font);
-    font-size: 0.64rem;
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: 0.015em;
-    color: #a1a1aa;
+    font-size: 0.8rem;
+    font-weight: 400;
+    line-height: 1.05;
+    letter-spacing: 0.02em;
+
     text-decoration-line: line-through;
-    text-decoration-color: #a1a1aa;
+    text-decoration-color: currentColor;
     text-decoration-thickness: 1px;
 }
 
 .bottom-card-arrow {
     display: grid;
+
     height: 1.9rem;
+
     width: 1.9rem;
+
     place-items: center;
+
     border-radius: 999px;
+
     border: 1px solid rgba(226, 232, 240, 0.95);
+
     background: #ffffff;
+
     color: #071923;
+
     font-size: 0.95rem;
+
     font-weight: 950;
+
     box-shadow: 0 6px 14px rgba(15, 23, 42, 0.05);
+
     transition:
         border-color 0.22s ease,
         background 0.22s ease,
@@ -1439,38 +1699,59 @@ const specs = computed(() => {
 
 .bottom-card-arrow:hover {
     border-color: rgba(11, 58, 86, 0.22);
+
     background: #eef8fb;
+
     transform: translateY(-1px);
 }
 
 .mobile-swipe-cue {
     display: inline-flex;
+
     align-items: center;
+
     gap: 0.28rem;
+
     border-radius: 999px;
+
     border: 1px solid rgba(11, 58, 86, 0.12);
+
     background: rgba(238, 248, 251, 0.9);
+
     padding: 0.32rem 0.55rem;
+
     font-size: 0.52rem;
+
     font-weight: 950;
+
     line-height: 1;
+
     letter-spacing: 0.08em;
+
     text-transform: uppercase;
+
     color: #0b3a56;
+
     box-shadow: 0 8px 18px rgba(11, 58, 86, 0.08);
 }
 
 .mobile-swipe-dot {
     height: 0.32rem;
+
     width: 0.32rem;
+
     border-radius: 999px;
+
     background: #0b78ff;
+
     box-shadow: 0 0 0 4px rgba(0, 132, 255, 0.12);
 }
 
 .mobile-swipe-cue-arrow {
     display: inline-block;
+
     font-size: 0.7rem;
+
     animation: mobileSwipeCueArrow 1.25s ease-in-out infinite;
 }
 
@@ -1478,12 +1759,43 @@ const specs = computed(() => {
     0%,
     100% {
         transform: translateX(0);
+
         opacity: 0.65;
     }
 
     50% {
         transform: translateX(3px);
+
         opacity: 1;
+    }
+}
+
+@media (max-width: 639px) {
+    .bottom-watch-title {
+        min-height: 2.3rem;
+        font-size: 0.76rem;
+        line-height: 1.05;
+        letter-spacing: -0.01em;
+    }
+
+    .bottom-watch-release {
+        margin-top: 0.16rem;
+        font-size: 0.66rem;
+        line-height: 1.03;
+    }
+
+    .bottom-watch-price {
+        font-size: 0.92rem;
+        line-height: 1.05;
+        letter-spacing: 0.035em;
+    }
+
+    .bottom-watch-srp {
+        font-size: 0.66rem;
+    }
+
+    .bottom-watch-price-row {
+        margin-top: 0.36rem;
     }
 }
 
@@ -1494,7 +1806,9 @@ const specs = computed(() => {
 
     .spec-compact-card {
         min-height: 4.15rem;
+
         border-radius: 1.1rem;
+
         padding: 0.85rem 0.95rem;
     }
 
@@ -1504,13 +1818,17 @@ const specs = computed(() => {
 
     .spec-compact-value {
         margin-top: 0.32rem;
+
         font-size: 0.95rem;
     }
 
     .bottom-watch-card {
         width: 230px;
+
         max-width: 230px;
+
         flex-basis: 230px;
+
         border-radius: 1.45rem;
     }
 
@@ -1520,44 +1838,71 @@ const specs = computed(() => {
 
     .bottom-watch-badges {
         left: 0.9rem;
+
         right: 0.9rem;
+
         top: 0.9rem;
+
         gap: 0.5rem;
     }
 
     .bottom-watch-pill,
     .bottom-watch-demand {
         padding: 0.48rem 0.72rem;
+
         font-size: 0.6rem;
     }
 
     .bottom-watch-view {
         left: 0.9rem;
+
         right: 0.9rem;
+
         bottom: 0.9rem;
+
         font-size: 0.8rem;
     }
 
     .bottom-watch-body {
         min-height: 7.2rem;
+
         padding: 1.15rem 1.25rem 1.25rem;
     }
 
     .bottom-watch-title {
         min-height: 2.85rem;
-        font-size: 1.17rem;
+
+        font-size: 1.14rem;
+        line-height: 1.08;
+        letter-spacing: -0.015em;
     }
 
     .bottom-watch-release {
-        font-size: 0.82rem;
+        font-size: 0.84rem;
     }
 
     .bottom-watch-price {
-        font-size: 1.32rem;
+        font-size: 1.14rem;
+        line-height: 1.08;
+        letter-spacing: -0.015em;
     }
 
     .bottom-watch-srp {
-        font-size: 0.72rem;
+        font-size: 0.84rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .bottom-watch-title,
+    .bottom-watch-price {
+        font-size: 1.28rem;
+        line-height: 1.07;
+        letter-spacing: -0.015em;
+    }
+
+    .bottom-watch-release,
+    .bottom-watch-srp {
+        font-size: 0.92rem;
     }
 }
 
@@ -1572,44 +1917,58 @@ const specs = computed(() => {
 
     .bottom-watch-card {
         width: 170px;
+
         max-width: 170px;
+
         flex-basis: 170px;
     }
 
     .bottom-watch-badges {
         left: 0.55rem;
+
         right: 0.55rem;
+
         top: 0.55rem;
+
         gap: 0.32rem;
     }
 
     .bottom-watch-pill,
     .bottom-watch-demand {
         padding: 0.32rem 0.48rem;
+
         font-size: 0.46rem;
     }
 
     .bottom-watch-body {
         min-height: 6.15rem;
+
         padding: 0.85rem 0.9rem 0.95rem;
     }
 
     .bottom-watch-title {
         min-height: 2.3rem;
-        font-size: 0.92rem;
+
+        font-size: 0.76rem;
+        line-height: 1.05;
+        letter-spacing: -0.01em;
     }
 
     .bottom-watch-release {
         margin-top: 0.18rem;
+
         font-size: 0.66rem;
+        line-height: 1.03;
     }
 
     .bottom-watch-price {
-        font-size: 1.02rem;
+        font-size: 0.92rem;
+        line-height: 1.05;
+        letter-spacing: 0.035em;
     }
 
     .bottom-watch-srp {
-        font-size: 0.55rem;
+        font-size: 0.66rem;
     }
 }
 </style>

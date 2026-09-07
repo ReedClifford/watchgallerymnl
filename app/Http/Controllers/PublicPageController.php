@@ -26,8 +26,12 @@ class PublicPageController extends Controller
 
         $condition = trim((string) $request->input('condition', ''));
 
+        $category = $this->normalizeCategoryFilter(
+            $request->input('category', '')
+        );
+
         $gender = $this->normalizeGenderFilter(
-            $request->input('gender', $request->input('category', ''))
+            $request->input('gender', '')
         );
 
         $inDemand = trim((string) $request->input('in_demand', ''));
@@ -55,36 +59,23 @@ class PublicPageController extends Controller
             ],
         ];
 
-        $categoryMap = [
-            'men' => [
-                "Men's",
-                'Mens',
-                'Men',
-                'Male',
-                'mens',
-            ],
-            'women' => [
-                "Women's",
-                'Womens',
-                'Women',
-                'Female',
-                'womens',
-            ],
-            'unisex' => [
-                'Unisex',
-                'unisex',
-            ],
-        ];
-
-       $heroWatches = Watch::query()
-        ->with($this->watchCardRelations())
-        ->whereIn('status', self::LISTED_STATUSES)
-        ->where('is_visible', true)
-        ->orderByDesc('id')
-        ->limit(5)
-        ->get()
-        ->map(fn ($watch) => $this->watchCard($watch))
-        ->values();
+        $heroWatches = collect([
+            'daily_sporty',
+            'dress',
+            'limited_edition',
+        ])
+            ->map(function (string $categoryValue) {
+                return Watch::query()
+                    ->with($this->watchCardRelations())
+                    ->whereIn('status', self::LISTED_STATUSES)
+                    ->where('is_visible', true)
+                    ->where('category', $categoryValue)
+                    ->orderByDesc('id')
+                    ->first();
+            })
+            ->filter()
+            ->map(fn ($watch) => $this->watchCard($watch))
+            ->values();
 
         $watchesQuery = Watch::query()
             ->with($this->watchCardRelations())
@@ -120,6 +111,9 @@ class PublicPageController extends Controller
             ->when($inDemand === '1' && $hasInDemandColumn, function ($query) {
                 $query->where('is_in_demand', true);
             })
+            ->when($category !== '' && $hasCategoryColumn, function ($query) use ($category) {
+                $query->where('category', $category);
+            })
             ->when($gender !== '' && $hasGenderColumn, function ($query) use ($gender) {
                 if ($gender === 'unisex') {
                     $query->where(function ($subQuery) {
@@ -133,19 +127,14 @@ class PublicPageController extends Controller
                 }
 
                 $query->where('gender', $gender);
-            })
-            ->when(
-                $gender !== '' && ! $hasGenderColumn && $hasCategoryColumn && isset($categoryMap[$gender]),
-                function ($query) use ($categoryMap, $gender) {
-                    $query->whereIn('category', $categoryMap[$gender]);
-                }
-            );
+            });
 
         $this->applyCollectionSort($watchesQuery, $sort, $hasInDemandColumn);
 
         $queryString = collect([
             'search' => $search !== '' ? $search : null,
             'condition' => $condition !== '' ? $condition : null,
+            'category' => $category !== '' ? $category : null,
             'gender' => $gender !== '' ? $gender : null,
             'in_demand' => $inDemand !== '' ? $inDemand : null,
             // 'sort' => $sort !== 'first_in' ? $sort : null,
@@ -175,10 +164,10 @@ class PublicPageController extends Controller
             'filters' => [
                 'search' => $search,
                 'condition' => $condition,
+                'category' => $category,
                 'gender' => $gender,
                 'in_demand' => $inDemand,
                 'sort' => $sort,
-                'category' => $gender,
             ],
         ]);
     }
@@ -230,7 +219,8 @@ class PublicPageController extends Controller
             'release' => $watch->release,
             'condition' => $watch->condition,
             'description' => $watch->description,
-            'category' => $watch->category,
+            'category' => $this->normalizeCategoryFilter($watch->category),
+            'category_label' => $this->categoryLabel($watch->category),
             'gender' => $this->watchGender($watch),
             'gender_label' => $this->genderLabel($this->watchGender($watch)),
 
@@ -377,19 +367,42 @@ private function visibleTransactions()
         ->values();
 }
 
-    private function otherWatchCards(Watch $currentWatch)
-    {
-        return Watch::query()
-            ->with($this->watchCardRelations())
-            ->whereIn('status', self::LISTED_STATUSES)
-            ->where('is_visible', true)
-            ->where('id', '!=', $currentWatch->id)
-            ->orderByDesc('id')
-            ->limit(10)
-            ->get()
-            ->map(fn ($watch) => $this->watchCard($watch))
-            ->values();
-    }
+private function otherWatchCards(Watch $currentWatch)
+{
+    $currentGender = $this->normalizeGenderFilter($currentWatch->gender ?? '');
+
+    return Watch::query()
+        ->with($this->watchCardRelations())
+        ->whereIn('status', self::LISTED_STATUSES)
+        ->where('is_visible', true)
+
+        // Exclude current watch
+        ->where('id', '!=', $currentWatch->id)
+
+        // Same category
+        ->when(
+            filled($currentWatch->category),
+            function ($query) use ($currentWatch) {
+                $query->where('category', $currentWatch->category);
+            }
+        )
+
+        // If current watch is for Women / Ladies,
+        // only recommend women's watches
+        ->when(
+            $currentGender === 'women',
+            function ($query) {
+                $query->where('gender', 'women');
+            }
+        )
+
+        // Randomized recommendations
+        ->inRandomOrder()
+        ->limit(10)
+        ->get()
+        ->map(fn ($watch) => $this->watchCard($watch))
+        ->values();
+}
 
     private function aboutUsContent()
     {
@@ -544,6 +557,30 @@ private function normalizeSortFilter($value): string
     $query->orderByDesc('id');
 }
 
+    private function normalizeCategoryFilter($value): string
+    {
+        $value = strtolower(trim((string) $value));
+        $value = str_replace(['/', '-', ' '], '_', $value);
+        $value = preg_replace('/_+/', '_', $value);
+
+        return match ($value) {
+            'daily_sporty', 'daily_and_sporty', 'daily', 'sporty' => 'daily_sporty',
+            'dress' => 'dress',
+            'limited_edition', 'limited', 'limitededition' => 'limited_edition',
+            default => '',
+        };
+    }
+
+    private function categoryLabel($category): string
+    {
+        return match ($this->normalizeCategoryFilter($category)) {
+            'daily_sporty' => 'Daily / Sporty',
+            'dress' => 'Dress',
+            'limited_edition' => 'Limited Edition',
+            default => 'Uncategorized',
+        };
+    }
+
     private function normalizeGenderFilter($value): string
     {
         $value = strtolower(trim((string) $value));
@@ -588,13 +625,7 @@ private function normalizeSortFilter($value): string
     {
         $gender = $this->normalizeGenderFilter($watch->gender ?? '');
 
-        if ($gender !== '') {
-            return $gender;
-        }
-
-        $categoryGender = $this->normalizeGenderFilter($watch->category ?? '');
-
-        return $categoryGender !== '' ? $categoryGender : 'unisex';
+        return $gender !== '' ? $gender : 'unisex';
     }
 
     private function genderLabel(?string $gender): string

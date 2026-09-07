@@ -32,6 +32,12 @@ class WatchController extends Controller
         'in_transit',
     ];
 
+    private const WATCH_CATEGORIES = [
+        'daily_sporty',
+        'dress',
+        'limited_edition',
+    ];
+
     public function index(Request $request)
     {
         $status = $request->input('status', 'all');
@@ -71,6 +77,7 @@ class WatchController extends Controller
                         ->orWhere('reference_number', 'like', "%{$search}%")
                         ->orWhere('release', 'like', "%{$search}%")
                         ->orWhere('condition', 'like', "%{$search}%")
+                        ->orWhere('category', 'like', "%{$search}%")
                         ->orWhere('gender', 'like', "%{$search}%");
                 });
             })
@@ -101,6 +108,7 @@ class WatchController extends Controller
                     'reference_number' => $watch->reference_number,
                     'release' => $watch->release,
                     'condition' => $watch->condition,
+                    'category' => $watch->category ?? 'daily_sporty',
                     'gender' => $watch->gender ?? 'unisex',
                     'description' => $watch->description,
 
@@ -627,6 +635,7 @@ private function nextDuplicateModelName(string $baseModelName): string
             'reference_number' => ['nullable', 'string', 'max:255'],
             'release' => ['nullable', 'string', 'max:255'],
             'condition' => ['required', 'string', 'max:255'],
+            'category' => ['required', Rule::in(self::WATCH_CATEGORIES)],
 
             'gender' => ['nullable', 'in:unisex,men,women'],
             'description' => ['nullable', 'string'],
@@ -676,6 +685,10 @@ private function nextDuplicateModelName(string $baseModelName): string
             $validated['primary_image_id'],
             $validated['primary_new_image_index']
         );
+
+        $validated['category'] = $validated['category']
+            ?? $watch?->category
+            ?? 'daily_sporty';
 
         $validated['gender'] = $validated['gender'] ?? 'unisex';
 
