@@ -3456,8 +3456,8 @@ button:hover .shop-now-icon {
 
     background: linear-gradient(
         135deg,
-        rgba(71, 85, 105, 0.95),
-        rgba(148, 163, 184, 0.7)
+        rgba(180, 83, 9, 0.94),
+        rgba(245, 158, 11, 0.64)
     );
 
     color: #ffffff;
