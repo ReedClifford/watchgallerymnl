@@ -363,11 +363,11 @@ const specs = computed(() => {
             value: props.watch.condition,
         },
 
-        {
-            label: "Category",
+        // {
+        //     label: "Category",
 
-            value: props.watch.category,
-        },
+        //     value: props.watch.category,
+        // },
 
         {
             label: "Movement",
