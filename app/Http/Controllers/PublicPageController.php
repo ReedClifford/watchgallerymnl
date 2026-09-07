@@ -70,7 +70,7 @@ class PublicPageController extends Controller
                     ->whereIn('status', self::LISTED_STATUSES)
                     ->where('is_visible', true)
                     ->where('category', $categoryValue)
-                    ->orderByDesc('id')
+                    ->inRandomOrder()
                     ->first();
             })
             ->filter()
