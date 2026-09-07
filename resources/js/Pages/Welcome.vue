@@ -3439,16 +3439,16 @@ button:hover .shop-now-icon {
 }
 
 .watch-badge-status-available {
-    border: 1px solid rgba(255, 255, 255, 0.42);
+    border: 1px solid rgba(255, 255, 255, 0.36);
 
     background: linear-gradient(
         135deg,
-        rgba(74, 160, 105, 0.9),
-        rgba(134, 239, 172, 0.62)
+        rgba(22, 101, 52, 0.96),
+        rgba(20, 83, 45, 0.82)
     );
 
     color: #ffffff;
-    text-shadow: 0 1px 8px rgba(7, 25, 35, 0.22);
+    text-shadow: 0 1px 8px rgba(7, 25, 35, 0.28);
 }
 
 .watch-badge-status-reserved {
